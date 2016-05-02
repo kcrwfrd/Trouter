@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import {isObject} from './common'
 import Registry from './Registry'
+import Transition from './Transition'
 
 class Router {
   constructor() {
@@ -14,11 +15,15 @@ class Router {
    * @description
    * Registers a route.
    *
-   * @param {String} [name]
+   * @param {[String]} name
    * @param {Object} definition
+   * @param {Boolean} definition.abstract
    * @param {String} definition.url
    * @param {String} definition.name
+   * @param {String} definition.label - For page title, breadcrumbs, etc.
+   * @param {String} definition.parent
    * @param {Function} definition.controller
+   * @param {Object|Array|*} definition.resolve
    */
 
   route(name, definition = {}) {
@@ -79,14 +84,22 @@ class Router {
 
     // @TODO: traverse exit path to call onExit handlers
 
-    // @TODO: traverse enterPath with a promise queue
-    for (let route of enterPath) {
-      if (route.controller) {
-        route.controller()
-      }
-    }
+    let transition = new Transition(exitPath, enterPath)
 
-    this.current = destination
+    let promise = transition.run()
+
+    // @TODO: do transitions need to be queued as well? See test
+    // 'Router: go(name): Should not invoke parent controller a
+    // second time when go is called synchronously.'
+    //
+    // Can also possibly be fixed by:
+    // this.current = destination
+
+    promise.then(() => {
+      this.current = destination
+    })
+
+    return promise
   }
 
 }
