@@ -1,7 +1,7 @@
 {
-  "name": "router",
+  "name": "trouter",
   "version": "0.0.0",
-  "description": "Framework-agnostic client-side router. Borrows heavily from Angular UI-Router.",
+  "description": "Client-side router with a tree of handlers.",
   "main": "index.js",
   "scripts": {
     "test": "karma start"
