@@ -2,9 +2,10 @@
   "name": "trouter",
   "version": "0.0.0",
   "description": "Client-side router with a tree of handlers.",
-  "main": "index.js",
+  "main": "dist/trouter.js",
   "scripts": {
-    "test": "karma start"
+    "test": "karma start",
+    "build": "webpack"
   },
   "author": "Kevin Crawford",
   "license": "MIT",
