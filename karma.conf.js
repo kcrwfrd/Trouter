@@ -3,6 +3,7 @@ module.exports = function(config) {
     basePath: './',
     files: [
       'node_modules/jasmine-promises/dist/jasmine-promises.js',
+      'node_modules/babel-polyfill/dist/polyfill.js',
       { pattern: 'src/**/*.spec.js', watched: false }
     ],
     browsers: ['PhantomJS'],
