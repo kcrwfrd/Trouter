@@ -2,10 +2,12 @@ import _ from 'lodash'
 import {isObject} from './common'
 import Registry from './Registry'
 import Transition from './Transition'
+import UrlRouter from './UrlRouter'
 
 class Router {
-  constructor() {
-    this.registry = new Registry()
+  constructor({prefix} = {}) {
+    this.urlRouter = new UrlRouter(prefix)
+    this.registry = new Registry(this, this.urlRouter)
 
     this.current = this.registry.root
   }
@@ -45,22 +47,13 @@ class Router {
    */
 
   listen() {
-    // @TODO: normalize popstate/hashchange
-    window.addEventListener('hashchange', (event) => {
-      let path = this.getPath(window.location.hash)
-
-      let destination = this.registry.urlMatcher.get(path)
-
-      this.go(destination)
-    })
+    this.urlRouter.listen()
   }
 
   /**
    * @method go
    * @description
    * Navigate to a route by name.
-   *
-   * @TODO return promise
    */
 
   go(name) {
@@ -70,17 +63,29 @@ class Router {
       throw new Error(`Route '${name}' not found.`)
     }
 
+    return this.transitionTo(destination)
+  }
+
+  /**
+   * @method transitionTo
+   * @description
+   * Lower-level method for transitioning to a route.
+   *
+   * @param {Route} route
+   */
+
+  transitionTo(route) {
     let nearestCommonAncestor =
       _.findLast(this.current.path, (ancestor) => {
-        return destination.path.indexOf(ancestor) > -1
+        return route.path.indexOf(ancestor) > -1
       })
 
     let exitPath = this.current.path
       .slice(this.current.path.indexOf(nearestCommonAncestor) + 1)
       .reverse()
 
-    let enterPath = destination.path
-      .slice(destination.path.indexOf(nearestCommonAncestor) + 1)
+    let enterPath = route.path
+      .slice(route.path.indexOf(nearestCommonAncestor) + 1)
 
     // @TODO: traverse exit path to call onExit handlers
 
@@ -91,12 +96,9 @@ class Router {
     // @TODO: do transitions need to be queued as well? See test
     // 'Router: go(name): Should not invoke parent controller a
     // second time when go is called synchronously.'
-    //
-    // Can also possibly be fixed by:
-    // this.current = destination
 
     promise.then(() => {
-      this.current = destination
+      this.current = route
     })
 
     return promise
