@@ -2,7 +2,8 @@ import Router from '../Router'
 import {defer} from '../common'
 
 describe('Router:', () => {
-  let router, homeCtrl, childCtrl, siblingCtrl, grandChildCtrl, fooCtrl;
+  let router, homeCtrl, childCtrl, siblingCtrl,
+  grandChildCtrl, fooCtrl, barCtrl, bazCtrl, bazDeferred;
 
   beforeEach(() => {
     router = new Router()
@@ -12,12 +13,40 @@ describe('Router:', () => {
     siblingCtrl = jasmine.createSpy()
     grandChildCtrl = jasmine.createSpy()
     fooCtrl = jasmine.createSpy()
+    barCtrl = jasmine.createSpy()
+    bazCtrl = jasmine.createSpy()
 
-    router.route('home', { controller: homeCtrl })
-      .route('home.child', { controller: childCtrl })
-      .route('home.sibling', { controller: siblingCtrl })
-      .route('home.child.grandChild', { controller: grandChildCtrl })
-      .route('foo', { controller: fooCtrl })
+    bazDeferred = defer()
+
+    router.route('home', {
+        controller: homeCtrl,
+        url: '/home'
+      })
+      .route('home.child', {
+        controller: childCtrl,
+        url: '/child'
+      })
+      .route('home.sibling', {
+        controller: siblingCtrl,
+        url: '/sibling'
+      })
+      .route('home.child.grandChild', {
+        controller: grandChildCtrl,
+        url: '/grandChild'
+      })
+      .route('foo', {
+        controller: fooCtrl,
+        url: '/foo/:fooId'
+      })
+      .route('foo.bar', {
+        controller: barCtrl,
+        url: '/bar'
+      })
+      .route('foo.baz', {
+        controller: bazCtrl,
+        url: '/baz/:bazId',
+        resolve: () => bazDeferred.promise
+      })
   })
 
   describe('go(name):', () => {
@@ -53,7 +82,8 @@ describe('Router:', () => {
         })
     })
 
-    it('Should not invoke parent controller a second time when go is called synchronously.', () => {
+    // @TODO
+    xit('Should not invoke parent controller a second time when go is called synchronously.', () => {
       router.go('home')
 
       return router.go('home.child')
@@ -145,6 +175,87 @@ describe('Router:', () => {
           expect(controller).not.toHaveBeenCalled()
         })
       })
+    })
+  })
+
+  describe('on hash change:', () => {
+    beforeEach(() => {
+      spyOn(router, 'transitionTo').and.callThrough()
+    })
+
+    it('Should go to the correct route.', () => {
+      router.urlRouter.onChange('#!/home')
+
+      expect(router.transitionTo).toHaveBeenCalledWith(
+        router.registry.get('home'),
+        jasmine.any(Object)
+      )
+    })
+
+    it('Should go to the correct child route.', () => {
+      router.urlRouter.onChange('#!/home/child')
+
+      expect(router.transitionTo).toHaveBeenCalledWith(
+        router.registry.get('home.child'),
+        jasmine.any(Object)
+      )
+    })
+
+    it('Should go to the correct grand child route.', () => {
+      router.urlRouter.onChange('#!/home/child/grandChild')
+
+      expect(router.transitionTo).toHaveBeenCalledWith(
+        router.registry.get('home.child.grandChild'),
+        jasmine.any(Object)
+      )
+    })
+
+    it('Should go to the correct route with param.', () => {
+      router.urlRouter.onChange('#!/foo/1')
+
+      expect(router.transitionTo).toHaveBeenCalledWith(
+        router.registry.get('foo'),
+        jasmine.objectContaining({
+          fooId: '1',
+        })
+      )
+
+      expect(router.transitionTo.calls.mostRecent().args[1]).toEqual({
+        fooId: '1'
+      })
+    })
+
+    it('Should go to the correct child route with parent param.', () => {
+      router.urlRouter.onChange('#!/foo/1/bar')
+
+      expect(router.transitionTo).toHaveBeenCalledWith(
+        router.registry.get('foo.bar'),
+        jasmine.objectContaining({
+          fooId: '1',
+        })
+      )
+
+      expect(router.transitionTo.calls.mostRecent().args[1]).toEqual({
+        fooId: '1'
+      })
+    })
+
+    it('Should go to the correct child route with param, parent param, and resolve.', () => {
+      router.urlRouter.onChange('#!/foo/1/baz/2')
+
+      expect(router.transitionTo).toHaveBeenCalledWith(
+        router.registry.get('foo.baz'),
+        jasmine.objectContaining({
+          fooId: '1',
+          bazId: '2',
+        })
+      )
+    })
+
+    it('Should throw an error if param is missing.', () => {
+      expect(() => router.urlRouter.onChange('#!/foo/')).toThrow(
+        new Error("No route handler found for '/foo/'")
+      )
     })
   })
 })
