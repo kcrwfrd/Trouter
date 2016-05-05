@@ -55,7 +55,7 @@ class Route {
    */
 
   enter(params = {}) {
-    let promise = getResolve(this.resolve)
+    let promise = getResolve(this.resolve, params)
 
     promise.then((resolve) => {
       if (this.Controller) {
@@ -88,36 +88,36 @@ class Route {
  * @returns {Promise}
  */
 
-function getResolve(value) {
+function getResolve(value, params) {
   if (value instanceof Promise) {
     return value
   }
 
   if (typeof value === 'function') {
-    return Promise.resolve(value())
+    return Promise.resolve(value(params))
   }
 
   if (_.isPlainObject(value)) {
-    return resolveObject(value)
+    return resolveObject(value, params)
   }
 
   if (Array.isArray(value)) {
     return Promise.all(value.map((item) => {
-      return (typeof item === 'function') ? item() : item
+      return (typeof item === 'function') ? item(params) : item
     }))
   }
 
   return Promise.resolve(value)
 }
 
-function resolveObject(obj) {
+function resolveObject(obj, params) {
   let keys = Object.keys(obj)
 
   // First invoke resolves and combine into single promise
   let combinedPromise = Promise.all(keys.map((key) => {
     let value = obj[key]
 
-    return (typeof value === 'function') ? value() : value
+    return (typeof value === 'function') ? value(params) : value
   }))
 
   // Then assign resolved values to their keys

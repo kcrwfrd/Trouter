@@ -16,20 +16,21 @@ describe('Route:', () => {
   })
 
   describe('Resolve:', () => {
-    let controller, deferred, route;
+    let controller, deferred, route, resolve;
 
     beforeEach(() => {
       controller = jasmine.createSpy('controller')
       deferred = defer()
+      resolve = jasmine.createSpy('resolve').and.returnValue(deferred.promise)
 
       route = new Route({
         name: 'foo',
         controller: controller,
-        resolve: (() => deferred.promise),
+        resolve: resolve,
         path: []
       })
 
-      route.enter()
+      route.enter({ fooId: '1' })
     })
 
     it('Should resolve promises before controller instantiation.', () => {
@@ -47,11 +48,16 @@ describe('Route:', () => {
 
       return deferred.promise.then(() => {
         expect(controller).toHaveBeenCalledWith(
-          jasmine.any(Object), 'bar'
+          jasmine.objectContaining({ fooId: '1' }),
+          'bar'
         )
-
-        expect(controller.calls.mostRecent().args[0]).toEqual({})
       })
+    })
+
+    it('Should call resolve with route params.', () => {
+      expect(resolve).toHaveBeenCalledWith(
+        jasmine.objectContaining({ fooId: '1' })
+      )
     })
 
     it('Should instantiate the controller with named resolves.', () => {
