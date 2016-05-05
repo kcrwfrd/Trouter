@@ -74,9 +74,16 @@ class Route {
   }
 
   exit() {
-    let promise = Promise.resolve(this.controller.onExit())
+    let promise = (this.controller && this.controller.onExit) ?
+      Promise.resolve(this.controller.onExit()) : Promise.resolve()
 
-    promise.then(() => this.controller = null)
+    promise.then(() => {
+      if (this.controller) {
+        this.controller = null
+      }
+    }).catch((error) => {
+      // @TODO: handle errors
+    })
 
     return promise
   }
