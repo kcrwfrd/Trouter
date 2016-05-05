@@ -12,7 +12,15 @@ module.exports = {
     path: __dirname + '/dist',
     filename: '[name].js',
     library: 'trouter',
-    libraryTarget: 'commonjs2'
+    libraryTarget: 'umd'
+  },
+  externals: {
+    lodash: {
+      commonjs: 'lodash',
+      commonjs2: 'lodash',
+      amd: '_',
+      root: '_'
+    }
   },
   module: {
     loaders: [
