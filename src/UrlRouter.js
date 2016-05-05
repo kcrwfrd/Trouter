@@ -23,6 +23,9 @@ class UrlRouter {
     window.addEventListener('hashchange', (event) => {
       this.onChange(window.location.hash)
     })
+
+    // Handle the current hash
+    this.onChange(window.location.hash)
   }
 
   when(url, handler) {
