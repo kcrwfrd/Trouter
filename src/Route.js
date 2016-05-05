@@ -11,7 +11,7 @@ class Route {
   constructor(definition) {
     let {
       abstract, controller, name,
-      parent, path, resolve, url
+      parent, path, resolve, title, url
     } = definition
 
     // Prepend URL with parent's URL
@@ -29,6 +29,7 @@ class Route {
     this.parent = parent || null
     this.path = path.concat(this)
     this.resolve = resolve || (controller && controller.resolve) || {}
+    this.title = title || name
     this.url = url
   }
 
@@ -66,6 +67,9 @@ class Route {
       if (this.Controller) {
         this.controller = new this.Controller(params, resolve)
       }
+
+      document.title = this.title
+
     }).catch((error) => {
       // @TODO: handle errors
     })
@@ -74,9 +78,16 @@ class Route {
   }
 
   exit() {
-    let promise = Promise.resolve(this.controller.onExit())
+    let promise = (this.controller && this.controller.onExit) ?
+      Promise.resolve(this.controller.onExit()) : Promise.resolve()
 
-    promise.then(() => this.controller = null)
+    promise.then(() => {
+      if (this.controller) {
+        this.controller = null
+      }
+    }).catch((error) => {
+      // @TODO: handle errors
+    })
 
     return promise
   }

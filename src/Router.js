@@ -6,6 +6,7 @@ import UrlRouter from './UrlRouter'
 
 class Router {
   constructor({prefix} = {}) {
+    this.prefix = prefix
     this.urlRouter = new UrlRouter(prefix)
     this.registry = new Registry(this, this.urlRouter)
 
@@ -100,8 +101,14 @@ class Router {
 
     promise.then(() => {
       this.current = route
-    }).catch(() => {
+    }).catch((error) => {
       // @TODO: handle errors
+      let url = (
+        window.location.origin + window.location.pathname +
+        this.prefix + this.current.url
+      )
+
+      window.history.pushState({}, this.current.title, url)
     })
 
     return promise
