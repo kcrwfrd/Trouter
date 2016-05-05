@@ -12,6 +12,10 @@ class Queue {
   }
 
   flush() {
+    if (this.queue.length === 0) {
+      return Promise.resolve()
+    }
+
     let first = this.queue.shift()
 
     return this.queue.reduce((current, next) => {
