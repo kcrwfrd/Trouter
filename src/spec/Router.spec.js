@@ -178,6 +178,38 @@ describe('Router:', () => {
     })
   })
 
+  describe('transitionTo(route, params):', () => {
+    it('Should instantiate controller with params.', () => {
+      let foo = router.registry.get('foo')
+
+      return router.transitionTo(foo, { 'fooId': 1}).then(() => {
+        let [params, resolve] = fooCtrl.calls.mostRecent().args
+
+        expect(params).toEqual({
+          'fooId': 1
+        })
+
+        expect(resolve).toEqual({})
+      })
+    })
+
+    it('Should instantiate controller with params and resolve.', () => {
+      let baz = router.registry.get('foo.baz')
+
+      bazDeferred.resolve('Baz')
+
+      return router.transitionTo(baz, { 'fooId': 1}).then(() => {
+        let [params, resolve] = bazCtrl.calls.mostRecent().args
+
+        expect(params).toEqual({
+          'fooId': 1
+        })
+
+        expect(resolve).toEqual('Baz')
+      })
+    })
+  })
+
   describe('on hash change:', () => {
     beforeEach(() => {
       spyOn(router, 'transitionTo').and.callThrough()
