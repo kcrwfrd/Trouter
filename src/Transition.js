@@ -7,7 +7,7 @@ import Queue from './Queue'
  */
 
 class Transition {
-  constructor(exitPath, enterPath) {
+  constructor(exitPath, enterPath, params) {
     // @TODO: exit queue
     // this.exitQueue = new Queue(exitPath.reduce((memo, route) => {
     //   if (route.controller.onExit) {
@@ -18,7 +18,7 @@ class Transition {
     // }, []))
 
     this.enterQueue = new Queue(enterPath.map((route) => {
-      return route.enter.bind(route)
+      return route.enter.bind(route, params)
     }))
   }
 

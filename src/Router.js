@@ -72,9 +72,10 @@ class Router {
    * Lower-level method for transitioning to a route.
    *
    * @param {Route} route
+   * @param {Object} params
    */
 
-  transitionTo(route) {
+  transitionTo(route, params) {
     let nearestCommonAncestor =
       _.findLast(this.current.path, (ancestor) => {
         return route.path.indexOf(ancestor) > -1
@@ -89,7 +90,7 @@ class Router {
 
     // @TODO: traverse exit path to call onExit handlers
 
-    let transition = new Transition(exitPath, enterPath)
+    let transition = new Transition(exitPath, enterPath, params)
 
     let promise = transition.run()
 
@@ -99,6 +100,8 @@ class Router {
 
     promise.then(() => {
       this.current = route
+    }).catch(() => {
+      // @TODO: handle errors
     })
 
     return promise
