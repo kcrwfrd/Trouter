@@ -15,7 +15,7 @@ class UrlRouter {
       }
     }
 
-    throw new Error(`No route handler found for '${path}'`)
+    console.warn(`No route handler found for '${path}'`)
   }
 
   listen() {

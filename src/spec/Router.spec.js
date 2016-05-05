@@ -284,9 +284,13 @@ describe('Router:', () => {
       )
     })
 
-    it('Should throw an error if param is missing.', () => {
-      expect(() => router.urlRouter.onChange('#!/foo/')).toThrow(
-        new Error("No route handler found for '/foo/'")
+    it('Should log a warning if param is missing.', () => {
+      spyOn(console, 'warn')
+
+      router.urlRouter.onChange('#!/foo/')
+
+      expect(console.warn).toHaveBeenCalledWith(
+        "No route handler found for '/foo/'"
       )
     })
   })

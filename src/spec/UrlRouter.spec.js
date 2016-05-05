@@ -33,9 +33,13 @@ describe('UrlRouter:', () => {
       })
     })
 
-    it('Should throw an error if no match found.', () => {
-      expect(() => urlRouter.onChange('#!/foo/1/bar')).toThrow(
-        new Error("No route handler found for '/foo/1/bar'")
+    it('Should log a warning if no match found.', () => {
+      spyOn(console, 'warn')
+
+      urlRouter.onChange('#!/foo/1/bar')
+
+      expect(console.warn).toHaveBeenCalledWith(
+        "No route handler found for '/foo/1/bar'"
       )
     })
   })
