@@ -32,7 +32,6 @@ describe('Route:', () => {
       route.enter()
     })
 
-
     it('Should resolve promises before controller instantiation.', () => {
       expect(controller).not.toHaveBeenCalled()
 
@@ -47,7 +46,11 @@ describe('Route:', () => {
       deferred.resolve('bar')
 
       return deferred.promise.then(() => {
-        expect(controller).toHaveBeenCalledWith('bar')
+        expect(controller).toHaveBeenCalledWith(
+          jasmine.any(Object), 'bar'
+        )
+
+        expect(controller.calls.mostRecent().args[0]).toEqual({})
       })
     })
 
@@ -69,7 +72,11 @@ describe('Route:', () => {
       bar.resolve('Bar')
 
       return route.enter().then(() => {
-        expect(controller.calls.mostRecent().args[0]).toEqual({
+        let [params, resolve] = controller.calls.mostRecent().args
+
+        expect(params).toEqual({})
+
+        expect(resolve).toEqual({
           foo: 'Foo',
           bar: 'Bar',
         })

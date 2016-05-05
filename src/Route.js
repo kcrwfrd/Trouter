@@ -47,13 +47,22 @@ class Route {
     return this.parent && this.parent.getRoot() || this
   }
 
-  enter() {
-    let promise = resolve(this.resolve)
+  /**
+   * @method enter
+   * @description
+   * Route becomes active, instantiating its controller
+   * if one is defined.
+   */
 
-    promise.then((value) => {
+  enter(params = {}) {
+    let promise = getResolve(this.resolve)
+
+    promise.then((resolve) => {
       if (this.Controller) {
-        this.controller = new this.Controller(value)
+        this.controller = new this.Controller(params, resolve)
       }
+    }).catch((error) => {
+      // @TODO: handle errors
     })
 
     return promise
@@ -69,7 +78,7 @@ class Route {
 }
 
 /**
- * @method resolve
+ * @method getResolve
  * @private
  * @description
  * Invokes/normalizes resolve functions and values into promises.
@@ -79,7 +88,7 @@ class Route {
  * @returns {Promise}
  */
 
-function resolve(value) {
+function getResolve(value) {
   if (value instanceof Promise) {
     return value
   }
