@@ -9,15 +9,22 @@ import {isObject, defer} from './common'
 
 class Route {
   constructor(definition) {
-    let {name, url, controller, parent, path, resolve} = definition
+    let {
+      abstract, controller, name,
+      parent, path, resolve, url
+    } = definition
 
-    this.name = name
-    this.url = url
+    // Prepend URL with parent's URL
+    url = (parent && parent.url) ? parent.url + url : url;
+
     this.Controller = controller // Controller definition
     this.controller = null // Controller instance
+    this.name = name
+    this.navigable = !!url && !abstract
     this.parent = parent || null
     this.path = path.concat(this)
     this.resolve = resolve || {}
+    this.url = url
   }
 
   getFqn() {

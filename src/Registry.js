@@ -2,12 +2,15 @@ import Route from './Route'
 import {isString} from './common'
 
 class Registry {
-  constructor() {
+  constructor(router, urlRouter) {
+    this.router = router
+    this.urlRouter = urlRouter
+
     this.routes = {}
 
     this.root = this.register({
       name: '',
-      url: '^',
+      url: '',
       abstract: true
     })
   }
@@ -38,6 +41,12 @@ class Registry {
 
     if (route) {
       this.routes[route.name] = route
+    }
+
+    if (route && route.navigable) {
+      this.urlRouter.when(route.url, (params) => {
+        return this.router.transitionTo(route, params)
+      })
     }
 
     return route

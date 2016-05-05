@@ -25,7 +25,10 @@ describe('Registry:', () => {
   }
 
   beforeEach(() => {
-    registry = new Registry()
+    let router = () => {}
+    let urlRouter = { when: () => {} }
+
+    registry = new Registry(router, urlRouter)
   })
 
   describe('register(definition):', () => {
