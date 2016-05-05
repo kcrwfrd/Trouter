@@ -133,13 +133,13 @@ describe('Router:', () => {
       })
 
       it('Should invoke the controller after promise resolution.', () => {
-        router.go('foo')
+        let promise = router.go('foo')
 
         expect(controller).not.toHaveBeenCalled()
 
         deferred.resolve('bar')
 
-        return deferred.promise.then(() => {
+        return promise.then(() => {
           expect(controller).toHaveBeenCalled()
         })
       })
@@ -206,6 +206,57 @@ describe('Router:', () => {
         })
 
         expect(resolve).toEqual('Baz')
+      })
+    })
+
+    describe('With Exit Handlers:', () => {
+      let deferred, onExit;
+
+      class Controller {
+        onExit() {}
+      }
+
+      beforeEach(() => {
+        deferred = defer()
+
+        onExit = spyOn(Controller.prototype, 'onExit').and.returnValue(deferred.promise)
+
+        router.route('gizmo', {
+          controller: Controller
+        })
+      })
+
+      it("Should call controller's exit handler when exiting a route.", () => {
+        return router.go('gizmo')
+          .then(() => {
+            router.go('foo')
+
+            expect(onExit).toHaveBeenCalled()
+          })
+      })
+
+      it('Should continue to its destination when exit handler resolves.', () => {
+        deferred.resolve('onExit')
+
+        return router.go('gizmo')
+          .then(() => router.go('foo'))
+          .then(() => {
+            expect(onExit).toHaveBeenCalled()
+            expect(fooCtrl).toHaveBeenCalled()
+          })
+      })
+
+      it('Should not change routes when exit handler is rejected.', () => {
+        deferred.reject('onExit')
+
+        deferred.promise.catch(() => {})
+
+        return router.go('gizmo')
+          .then(() => router.go('foo'), () => {})
+          .catch(() => {
+            expect(onExit).toHaveBeenCalled()
+            expect(fooCtrl).not.toHaveBeenCalled()
+          })
       })
     })
   })
