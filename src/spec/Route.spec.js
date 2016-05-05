@@ -88,5 +88,53 @@ describe('Route:', () => {
         })
       })
     })
+
+    describe('Defined on Controller:', () => {
+      let deferred, route;
+
+      class Controller {
+        static resolve(routeParams) {}
+      }
+
+      beforeEach(() => {
+        deferred = defer()
+
+        spyOn(Controller, 'resolve').and.returnValue(deferred.promise)
+
+        route = new Route({
+          name: 'foo',
+          controller: Controller,
+          path: []
+        })
+      })
+
+      it("Should call a controller's static resolve method if defined.", () => {
+        route.enter()
+
+        expect(Controller.resolve).toHaveBeenCalled()
+      })
+
+      it("Should call a controller's static resolve method with route params.", () => {
+        route.enter({ fooId: '1' })
+
+        expect(Controller.resolve).toHaveBeenCalledWith(
+          jasmine.objectContaining({ fooId: '1' })
+        )
+      })
+
+      it('Should throw an error if resolve defined on both controller and route.', () => {
+        expect(() => {
+          new Route({
+            name: 'foo',
+            controller: Controller,
+            resolve: (() => deferred.promise),
+            path: []
+          })
+        }).toThrow(
+          new Error('Resolve cannot be defined on both controller and route.')
+        )
+      })
+    })
+
   })
 })

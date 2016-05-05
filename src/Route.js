@@ -17,13 +17,18 @@ class Route {
     // Prepend URL with parent's URL
     url = (parent && parent.url) ? parent.url + url : url;
 
+    // Only 1 resolve definition allowed
+    if (controller && controller.resolve && resolve) {
+      throw new Error('Resolve cannot be defined on both controller and route.')
+    }
+
     this.Controller = controller // Controller definition
     this.controller = null // Controller instance
     this.name = name
     this.navigable = !!url && !abstract
     this.parent = parent || null
     this.path = path.concat(this)
-    this.resolve = resolve || {}
+    this.resolve = resolve || (controller && controller.resolve) || {}
     this.url = url
   }
 
