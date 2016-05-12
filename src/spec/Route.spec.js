@@ -137,4 +137,35 @@ describe('Route:', () => {
     })
 
   })
+
+  describe('href(params):', () => {
+    let route;
+
+    beforeEach(() => {
+      route = new Route({
+        name: 'foo',
+        url: '/foo/:fooId',
+        controller: () => {},
+        path: []
+      })
+    })
+
+    it('Should return the URL for route with param.', () => {
+      expect(route.href({ fooId: 1})).toBe('/foo/1')
+    })
+
+    it('Should return the URL for complex route with params.', () => {
+      route.url = '/foo/:fooId/bar/baz/:bazId'
+
+      let href = route.href({ fooId: 1, bazId: 2})
+
+      expect(href).toBe('/foo/1/bar/baz/2')
+    })
+
+    it('Should throw an error if required param is missing.', () => {
+      expect(() => route.href()).toThrow(
+        new Error("Missing required param 'fooId'")
+      )
+    })
+  })
 })
