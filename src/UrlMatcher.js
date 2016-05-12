@@ -62,6 +62,34 @@ class UrlMatcher {
       return memo
     }, {})
   }
+
+  /**
+   * @method getParams
+   * @static
+   * @description
+   * Extract param names from a URL pattern.
+   *
+   * @param {String} urlPattern
+   * @param {Function} [callback] - Optional
+   *
+   * @example
+   * UrlMatcher.getParams('/foo/:fooId/bar/:barId')
+   * -> ['fooId', 'barId']
+   */
+
+  static getParams(urlPattern) {
+    let params = []
+
+    for (let item of urlPattern.split('/')) {
+      if (item === '') continue
+
+      if(item.startsWith(':')) {
+        params.push(item.slice(1))
+      }
+    }
+
+    return params
+  }
 }
 
 export default UrlMatcher

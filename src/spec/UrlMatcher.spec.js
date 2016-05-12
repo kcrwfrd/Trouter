@@ -3,6 +3,14 @@ import UrlMatcher from '../UrlMatcher'
 describe('UrlMatcher:', () => {
   let urlMatcher, foo;
 
+  describe('getParams(urlPattern):', () => {
+    it('Should extract param names.', () => {
+      let params = UrlMatcher.getParams('/foo/:fooId/bar/:barId')
+
+      expect(params).toEqual(['fooId', 'barId'])
+    })
+  })
+
   describe('Plain Routes:', () => {
     beforeEach(() => {
       urlMatcher = new UrlMatcher('/foo')
