@@ -167,5 +167,25 @@ describe('Route:', () => {
         new Error("Missing required param 'fooId'")
       )
     })
+
+    it('Should return the URL with a defined query parameter.', () => {
+      route.url = "/foo/:fooId?barId"
+
+      expect(route.href({ fooId: 1, barId: 2})).toBe('/foo/1?barId=2')
+    })
+
+    it('Should return the URL with multiple query parameters.', () => {
+      route.url = "/foo/:fooId?barId&bizId"
+
+      let url = route.href({ fooId: 1, barId: 2, bizId: 3})
+
+      expect(url).toBe('/foo/1?barId=2&bizId=3')
+    })
+
+    it('Should return the URL without an undefined query parameter.', () => {
+      route.url = "/foo/:fooId?barId"
+
+      expect(route.href({ fooId: 1})).toBe('/foo/1')
+    })
   })
 })

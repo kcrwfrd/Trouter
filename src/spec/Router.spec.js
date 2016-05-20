@@ -3,7 +3,7 @@ import {defer} from '../common'
 
 describe('Router:', () => {
   let router, homeCtrl, childCtrl, siblingCtrl,
-  grandChildCtrl, fooCtrl, barCtrl, bazCtrl, bazDeferred;
+  grandChildCtrl, fooCtrl, barCtrl, bazCtrl, bazDeferred, bizCtrl;
 
   beforeEach(() => {
     router = new Router()
@@ -15,6 +15,7 @@ describe('Router:', () => {
     fooCtrl = jasmine.createSpy()
     barCtrl = jasmine.createSpy()
     bazCtrl = jasmine.createSpy()
+    bizCtrl = jasmine.createSpy()
 
     bazDeferred = defer()
 
@@ -48,6 +49,11 @@ describe('Router:', () => {
         title: 'Baz',
         url: '/baz/:bazId',
         resolve: () => bazDeferred.promise
+      })
+      .route('foo.biz', {
+        controller: bizCtrl,
+        title: 'Biz',
+        url: '/biz?bizId'
       })
   })
 
@@ -265,6 +271,30 @@ describe('Router:', () => {
           jasmine.any(Object),
           'Bar',
           '#!/foo/1/bar/2'
+        )
+      })
+    })
+
+    it('Should update URL without query arg when arg is null.', () => {
+      spyOn(router, 'pushState')
+
+      return router.go('foo.biz', { fooId: 2 }).then(() => {
+        expect(router.pushState).toHaveBeenCalledWith(
+          jasmine.any(Object),
+          'Biz',
+          '#!/foo/2/biz'
+        )
+      })
+    })
+
+    it('Should update URL with query arg when arg is defined.', () => {
+      spyOn(router, 'pushState')
+
+      return router.go('foo.biz', { fooId: 2, bizId: 3 }).then(() => {
+        expect(router.pushState).toHaveBeenCalledWith(
+          jasmine.any(Object),
+          'Biz',
+          '#!/foo/2/biz?bizId=3'
         )
       })
     })
