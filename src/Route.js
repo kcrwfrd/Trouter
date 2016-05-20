@@ -80,13 +80,33 @@ class Route {
       return ''
     }
 
-    return this.url.replace(PARAMS, (match, param) => {
+    let [path, query] = this.url.split('?')
+
+    let url = path.replace(PARAMS, (match, param) => {
       if (param in params) {
         return params[param]
       }
 
       throw new Error(`Missing required param '${param}'`)
     })
+
+    if (query) {
+      let isFirst = true
+
+      for (let paramName of query.split('&')) {
+        let paramValue = params[paramName]
+
+        if (paramValue) {
+          (isFirst) ? url += '?' : url += '&';
+
+          url += `${paramName}=${paramValue}`
+
+          isFirst = false
+        }
+      }
+    }
+
+    return url
   }
 
   /**
