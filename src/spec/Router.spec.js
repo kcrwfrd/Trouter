@@ -313,6 +313,17 @@ describe('Router:', () => {
         })
     })
 
+    it('Should exit and re-enter if route is the same.', () => {
+      spyOn(foo, 'exit').and.callThrough()
+
+      return router.transitionTo(foo, { fooId: 1 })
+        .then(() => router.transitionTo(foo))
+        .then(() => {
+          expect(foo.exit).toHaveBeenCalled()
+          expect(fooCtrl.calls.count()).toBe(2)
+        })
+    })
+
     describe('With Exit Handlers:', () => {
       let deferred, onExit;
 
