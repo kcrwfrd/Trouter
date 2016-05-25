@@ -1,16 +1,18 @@
 import _ from 'lodash'
-import {isObject} from './common'
+import {isObject, isString} from './common'
+import Current from './Current'
 import Registry from './Registry'
 import Transition from './Transition'
 import UrlRouter from './UrlRouter'
 
 class Router {
   constructor({prefix} = {}) {
-    this.prefix = prefix
+    this.prefix = prefix || '#!'
+
     this.urlRouter = new UrlRouter(prefix)
     this.registry = new Registry(this, this.urlRouter)
 
-    this.current = this.registry.root
+    this.current = new Current(this, this.registry.root)
   }
 
   /**
@@ -52,19 +54,59 @@ class Router {
   }
 
   /**
-   * @method go
+   * @method href
    * @description
-   * Navigate to a route by name.
+   * Returns the URL for a given route with given params.
+   * Params inherit defaults from current params.
+   *
+   * @param {String|Route} route - Route name or instance
+   * @param {Object} [params]
+   *
+   * @returns {String}
    */
 
-  go(name) {
+  href(route, params = {}) {
+    route = (isString(route)) ? this.registry.get(route) : route
+
+    if (!route) {
+      throw new Error(`No match found for route '${route}'`)
+    }
+
+    params = Object.assign({}, this.current.params, params)
+
+    return this.prefix + route.href(params)
+  }
+
+  /**
+   * @method go
+   * @description
+   * Programmatically navigate to a route by name, updating URL.
+   */
+
+  go(name, params = {}) {
     let destination = this.registry.get(name)
 
     if (!destination) {
       throw new Error(`Route '${name}' not found.`)
     }
 
-    return this.transitionTo(destination)
+    return this.transitionTo(destination, params, { location: true })
+  }
+
+  /**
+   * @method pushState
+   * @description
+   * Wraps window.history.pushState.
+   *
+   * @param {Object} state
+   * @param {String} title
+   * @param {String} url
+   */
+
+  pushState(state = {}, title, url) {
+    if (window && window.history && window.history.pushState) {
+      window.history.pushState(state, title, url)
+    }
   }
 
   /**
@@ -76,22 +118,28 @@ class Router {
    * @param {Object} params
    */
 
-  transitionTo(route, params) {
+  transitionTo(route, params = {}, options = {}) {
+    // @TODO: refactor into transition manager
     let nearestCommonAncestor =
-      _.findLast(this.current.path, (ancestor) => {
+      _.findLast(this.current.path(), (ancestor) => {
         return route.path.indexOf(ancestor) > -1
       })
 
-    let exitPath = this.current.path
-      .slice(this.current.path.indexOf(nearestCommonAncestor) + 1)
+    let exitPath = this.current.path()
+      .slice(this.current.path().indexOf(nearestCommonAncestor) + 1)
       .reverse()
 
     let enterPath = route.path
       .slice(route.path.indexOf(nearestCommonAncestor) + 1)
 
-    // @TODO: traverse exit path to call onExit handlers
+    // Default params to current
+    params = Object.assign({}, this.current.params, params)
 
     let transition = new Transition(exitPath, enterPath, params)
+
+    if (options.location) {
+      this.pushState({}, route.title, this.href(route, params))
+    }
 
     let promise = transition.run()
 
@@ -100,15 +148,10 @@ class Router {
     // second time when go is called synchronously.'
 
     promise.then(() => {
-      this.current = route
+      this.current.put(route, params)
     }).catch((error) => {
       // @TODO: handle errors
-      let url = (
-        window.location.origin + window.location.pathname +
-        this.prefix + this.current.url
-      )
-
-      window.history.pushState({}, this.current.title, url)
+      this.pushState({}, this.current.route.title, this.current.url())
     })
 
     return promise

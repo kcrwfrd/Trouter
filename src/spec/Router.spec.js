@@ -3,7 +3,7 @@ import {defer} from '../common'
 
 describe('Router:', () => {
   let router, homeCtrl, childCtrl, siblingCtrl,
-  grandChildCtrl, fooCtrl, barCtrl, bazCtrl, bazDeferred;
+  grandChildCtrl, fooCtrl, barCtrl, bazCtrl, bazDeferred, bizCtrl;
 
   beforeEach(() => {
     router = new Router()
@@ -15,6 +15,7 @@ describe('Router:', () => {
     fooCtrl = jasmine.createSpy()
     barCtrl = jasmine.createSpy()
     bazCtrl = jasmine.createSpy()
+    bizCtrl = jasmine.createSpy()
 
     bazDeferred = defer()
 
@@ -40,12 +41,19 @@ describe('Router:', () => {
       })
       .route('foo.bar', {
         controller: barCtrl,
-        url: '/bar'
+        title: 'Bar',
+        url: '/bar/:barId'
       })
       .route('foo.baz', {
         controller: bazCtrl,
+        title: 'Baz',
         url: '/baz/:bazId',
         resolve: () => bazDeferred.promise
+      })
+      .route('foo.biz', {
+        controller: bizCtrl,
+        title: 'Biz',
+        url: '/biz?bizId'
       })
   })
 
@@ -95,7 +103,7 @@ describe('Router:', () => {
 
     it('Should invoke parent controller a second time', () => {
       return router.go('home.child')
-        .then(() => router.go('foo'))
+        .then(() => router.go('foo', { fooId: 1 }))
         .then(() => router.go('home.child.grandChild'))
         .then(() => {
           expect(fooCtrl.calls.count()).toBe(1)
@@ -109,7 +117,7 @@ describe('Router:', () => {
       router.go('home.child.grandChild')
 
       // @TODO: expect exit handlers to be called
-      router.go('foo')
+      router.go('foo', { fooId: 1 })
     })
 
     it('Should throw an error when route not found.', () => {
@@ -149,36 +157,69 @@ describe('Router:', () => {
         // let onError = jasmine.createSpy('onError')
         // router.on('error', onError)
 
-        router.go('foo')
+        spyOn(console, 'error')
 
         deferred.reject('bar')
 
-        return deferred.promise.catch(() => {
+        return router.go('foo').catch(() => {
           expect(controller).not.toHaveBeenCalled()
-          // expect(onError).toHaveBeenCalled()
+          expect(console.error).toHaveBeenCalledWith('bar')
         })
       })
 
       it('Should not invoke a child route if parent resolve was rejected.', () => {
         let controller = jasmine.createSpy('controller')
+        spyOn(console, 'error')
 
         router.route('foo.bar', {
           parent: 'foo',
           controller: controller
         })
 
-        router.go('foo.bar')
-
         deferred.reject('rejected')
 
-        return deferred.promise.catch(() => {
+        return router.go('foo.bar').catch(() => {
           expect(controller).not.toHaveBeenCalled()
+          expect(console.error).toHaveBeenCalledWith('rejected')
         })
       })
     })
   })
 
+  describe('href(name, params):', () => {
+    it('Should return the URL for a route with params.', () => {
+      let href = router.href('foo', { fooId: 1 })
+
+      expect(href).toBe('#!/foo/1')
+    })
+
+    it('Should inherit current params.', () => {
+      return router.go('foo', { fooId: 1}).then(() => {
+        let href = router.href('foo.baz', { bazId: 2 })
+
+        expect(href).toBe('#!/foo/1/baz/2')
+      })
+    })
+
+    it('Should return the correct URL for a child route with no URL.', () => {
+      router.route('biz', {
+        parent: 'foo'
+      })
+
+      let href = router.href('biz', { fooId: 1 })
+
+      expect(href).toBe('#!/foo/1')
+    })
+  })
+
   describe('transitionTo(route, params):', () => {
+    let foo, bar;
+
+    beforeEach(() => {
+      foo = router.registry.get('foo')
+      bar = router.registry.get('foo.bar')
+    })
+
     it('Should instantiate controller with params.', () => {
       let foo = router.registry.get('foo')
 
@@ -190,6 +231,15 @@ describe('Router:', () => {
         })
 
         expect(resolve).toEqual({})
+      })
+    })
+
+    it('Should update current with params.', () => {
+      spyOn(router.current, 'put')
+
+      return router.transitionTo(foo, { 'fooId': 1}).then(() => {
+        expect(router.current.put).toHaveBeenCalledWith(foo,
+          jasmine.objectContaining({ fooId: 1 }))
       })
     })
 
@@ -207,6 +257,60 @@ describe('Router:', () => {
 
         expect(resolve).toEqual('Baz')
       })
+    })
+
+    it('Should update URL with correct params.', () => {
+      spyOn(router, 'pushState')
+
+      return router.transitionTo(bar, { fooId: 1, barId: 2}, {
+        location: true
+      }).then(() => {
+        expect(router.pushState).toHaveBeenCalled()
+
+        expect(router.pushState).toHaveBeenCalledWith(
+          jasmine.any(Object),
+          'Bar',
+          '#!/foo/1/bar/2'
+        )
+      })
+    })
+
+    it('Should update URL without query arg when arg is null.', () => {
+      spyOn(router, 'pushState')
+
+      return router.go('foo.biz', { fooId: 2 }).then(() => {
+        expect(router.pushState).toHaveBeenCalledWith(
+          jasmine.any(Object),
+          'Biz',
+          '#!/foo/2/biz'
+        )
+      })
+    })
+
+    it('Should update URL with query arg when arg is defined.', () => {
+      spyOn(router, 'pushState')
+
+      return router.go('foo.biz', { fooId: 2, bizId: 3 }).then(() => {
+        expect(router.pushState).toHaveBeenCalledWith(
+          jasmine.any(Object),
+          'Biz',
+          '#!/foo/2/biz?bizId=3'
+        )
+      })
+    })
+
+    it('Should inherit params.', () => {
+      spyOn(router, 'pushState')
+
+      return router.transitionTo(foo, { fooId: 1 })
+        .then(() => router.transitionTo(bar, { barId: 2 }, { location: true }))
+        .then(() => {
+          expect(router.pushState).toHaveBeenCalledWith(
+            jasmine.any(Object),
+            'Bar',
+            '#!/foo/1/bar/2'
+          )
+        })
     })
 
     describe('With Exit Handlers:', () => {
@@ -229,7 +333,7 @@ describe('Router:', () => {
       it("Should call controller's exit handler when exiting a route.", () => {
         return router.go('gizmo')
           .then(() => {
-            router.go('foo')
+            router.go('home')
 
             expect(onExit).toHaveBeenCalled()
           })
@@ -239,23 +343,24 @@ describe('Router:', () => {
         deferred.resolve('onExit')
 
         return router.go('gizmo')
-          .then(() => router.go('foo'))
+          .then(() => router.go('home'))
           .then(() => {
             expect(onExit).toHaveBeenCalled()
-            expect(fooCtrl).toHaveBeenCalled()
+            expect(homeCtrl).toHaveBeenCalled()
           })
       })
 
       it('Should not change routes when exit handler is rejected.', () => {
+        spyOn(console, 'error')
+
         deferred.reject('onExit')
 
-        deferred.promise.catch(() => {})
-
         return router.go('gizmo')
-          .then(() => router.go('foo'), () => {})
+          .then(() => router.go('home'), () => {})
           .catch(() => {
             expect(onExit).toHaveBeenCalled()
-            expect(fooCtrl).not.toHaveBeenCalled()
+            expect(console.error).toHaveBeenCalledWith('onExit')
+            expect(homeCtrl).not.toHaveBeenCalled()
           })
       })
     })
@@ -309,17 +414,19 @@ describe('Router:', () => {
     })
 
     it('Should go to the correct child route with parent param.', () => {
-      router.urlRouter.onChange('#!/foo/1/bar')
+      router.urlRouter.onChange('#!/foo/1/bar/2')
 
       expect(router.transitionTo).toHaveBeenCalledWith(
         router.registry.get('foo.bar'),
         jasmine.objectContaining({
           fooId: '1',
+          barId: '2',
         })
       )
 
       expect(router.transitionTo.calls.mostRecent().args[1]).toEqual({
-        fooId: '1'
+        fooId: '1',
+        barId: '2',
       })
     })
 

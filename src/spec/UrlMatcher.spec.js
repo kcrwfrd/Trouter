@@ -3,6 +3,14 @@ import UrlMatcher from '../UrlMatcher'
 describe('UrlMatcher:', () => {
   let urlMatcher, foo;
 
+  describe('getParams(urlPattern):', () => {
+    it('Should extract param names.', () => {
+      let params = UrlMatcher.getParams('/foo/:fooId/bar/:barId')
+
+      expect(params).toEqual(['fooId', 'barId'])
+    })
+  })
+
   describe('Plain Routes:', () => {
     beforeEach(() => {
       urlMatcher = new UrlMatcher('/foo')
@@ -18,6 +26,10 @@ describe('UrlMatcher:', () => {
 
     it('Should match the entire route.', () => {
       expect(urlMatcher.exec('/foo/bar')).toBe(null)
+    })
+
+    it('Should match the route with query args added.', () => {
+      expect(urlMatcher.exec('/foo?bar=2')).toEqual({})
     })
   })
 
@@ -45,6 +57,64 @@ describe('UrlMatcher:', () => {
       expect(urlMatcher.exec('/foo/1/bar/2')).toEqual({
         fooId: '1',
         barId: '2',
+      })
+    })
+  })
+
+  describe('Routes with query params:', () => {
+    beforeEach(() => {
+      urlMatcher = new UrlMatcher('/foo/:fooId?barId')
+    })
+
+    it('Should have the query param.', () => {
+      expect(urlMatcher.queryParams).toEqual(['barId'])
+    })
+
+    it('Should match a route with the query param.', () => {
+      expect(urlMatcher.exec('/foo/1?barId=2')).toEqual({
+        fooId: '1',
+        barId: '2',
+      })
+    })
+
+    it('Should match a route with the query param omitted', () => {
+      expect(urlMatcher.exec('/foo/1')).toEqual({
+        fooId: '1',
+        barId: null,
+      })
+    })
+
+    describe('With multiple query params:', () => {
+      beforeEach(() => {
+        urlMatcher = new UrlMatcher('/foo/:fooId?barId&bazId')
+      })
+
+      it('Should have the query param.', () => {
+      expect(urlMatcher.queryParams).toEqual(['barId', 'bazId'])
+    })
+
+      it('Should match a route with multiple query params.', () => {
+        expect(urlMatcher.exec('/foo/1?barId=2&bazId=3')).toEqual({
+          fooId: '1',
+          barId: '2',
+          bazId: '3',
+        })
+      })
+
+      it('Should match a route with query params in different order.', () => {
+        expect(urlMatcher.exec('/foo/1?barId=2&bazId=3')).toEqual({
+          fooId: '1',
+          barId: '2',
+          bazId: '3',
+        })
+      })
+
+      it('Should match a route with 1 query param omitted.', () => {
+        expect(urlMatcher.exec('/foo/1?barId=2')).toEqual({
+          fooId: '1',
+          barId: '2',
+          bazId: null,
+        })
       })
     })
   })

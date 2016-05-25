@@ -7,6 +7,9 @@ import {isObject, defer} from './common'
  * A fully-built route.
  */
 
+// RegEx for matching URL params
+const PARAMS = /\:([A-Za-z0-9_-]+)/g
+
 class Route {
   constructor(definition) {
     let {
@@ -14,7 +17,11 @@ class Route {
       parent, path, resolve, title, url
     } = definition
 
+    url = url || ''
+
     // Prepend URL with parent's URL
+    // @TODO: should each route only be concerned with its section of the url?
+    // e.g. fullUrl = this.path.reduce(((url, route) => url + route.url), this.router.base)
     url = (parent && parent.url) ? parent.url + url : url;
 
     // Only 1 resolve definition allowed
@@ -54,6 +61,55 @@ class Route {
   }
 
   /**
+   * @method href
+   * @description
+   * Returns route's URL with specified params.
+   *
+   * @param {Object} [params] - Required if route has params
+   *
+   * @example
+   * this.url
+   * -> /foo/:fooId
+   *
+   * this.href({fooId: 1})
+   * -> /foo/1
+   */
+
+  href(params = {}) {
+    if (!this.url) {
+      return ''
+    }
+
+    let [path, query] = this.url.split('?')
+
+    let url = path.replace(PARAMS, (match, param) => {
+      if (param in params) {
+        return params[param]
+      }
+
+      throw new Error(`Missing required param '${param}'`)
+    })
+
+    if (query) {
+      let isFirst = true
+
+      for (let paramName of query.split('&')) {
+        let paramValue = params[paramName]
+
+        if (paramValue) {
+          (isFirst) ? url += '?' : url += '&';
+
+          url += `${paramName}=${paramValue}`
+
+          isFirst = false
+        }
+      }
+    }
+
+    return url
+  }
+
+  /**
    * @method enter
    * @description
    * Route becomes active, instantiating its controller
@@ -72,6 +128,7 @@ class Route {
 
     }).catch((error) => {
       // @TODO: handle errors
+      console.error(error)
     })
 
     return promise
@@ -87,6 +144,7 @@ class Route {
       }
     }).catch((error) => {
       // @TODO: handle errors
+      console.error(error)
     })
 
     return promise

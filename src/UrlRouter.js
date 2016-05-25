@@ -21,6 +21,10 @@ class UrlRouter {
   listen() {
     // @TODO: normalize popstate/hashchange
     window.addEventListener('hashchange', (event) => {
+      // this.onChange(window.location.hash)
+    })
+
+    window.addEventListener('popstate', (event) => {
       this.onChange(window.location.hash)
     })
 

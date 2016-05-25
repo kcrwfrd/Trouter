@@ -137,4 +137,55 @@ describe('Route:', () => {
     })
 
   })
+
+  describe('href(params):', () => {
+    let route;
+
+    beforeEach(() => {
+      route = new Route({
+        name: 'foo',
+        url: '/foo/:fooId',
+        controller: () => {},
+        path: []
+      })
+    })
+
+    it('Should return the URL for route with param.', () => {
+      expect(route.href({ fooId: 1})).toBe('/foo/1')
+    })
+
+    it('Should return the URL for complex route with params.', () => {
+      route.url = '/foo/:fooId/bar/baz/:bazId'
+
+      let href = route.href({ fooId: 1, bazId: 2})
+
+      expect(href).toBe('/foo/1/bar/baz/2')
+    })
+
+    it('Should throw an error if required param is missing.', () => {
+      expect(() => route.href()).toThrow(
+        new Error("Missing required param 'fooId'")
+      )
+    })
+
+    it('Should return the URL with a defined query parameter.', () => {
+      route.url = "/foo/:fooId?barId"
+
+      expect(route.href({ fooId: 1, barId: 2})).toBe('/foo/1?barId=2')
+    })
+
+    it('Should return the URL with multiple query parameters.', () => {
+      route.url = "/foo/:fooId?barId&bizId"
+
+      let url = route.href({ fooId: 1, barId: 2, bizId: 3})
+
+      expect(url).toBe('/foo/1?barId=2&bizId=3')
+    })
+
+    it('Should return the URL without an undefined query parameter.', () => {
+      route.url = "/foo/:fooId?barId"
+
+      expect(route.href({ fooId: 1})).toBe('/foo/1')
+    })
+  })
 })

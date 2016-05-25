@@ -4,17 +4,25 @@ class UrlMatcher {
    * @description
    * Takes a URL pattern with optional params denoted by ':'
    *
-   * @param {String} urlPattern - e.g. /foo/:fooId/bar
+   * @param {String} urlPattern - e.g. /foo/:fooId/bar?bazId
    */
 
   constructor(urlPattern) {
     this.params = []
+    this.pathParams = []
+    this.queryParams = []
+
+    // Query args are optional and can occur in any order, so we
+    // match for them separately from the path RegEx pattern.
+    this.queryPatterns = []
 
     // We'll build up the regex string
     // as we iterate through the path.
     let pattern = ''
 
-    for (let item of urlPattern.split('/')) {
+    let [pathPattern, queryPattern] = urlPattern.split('?')
+
+    for (let item of pathPattern.split('/')) {
       if (item === '') continue
 
       let isParam = item.startsWith(':')
@@ -22,15 +30,30 @@ class UrlMatcher {
       if (isParam) {
         let paramName = item.slice(1)
 
-        this.params.push(paramName)
+        this.pathParams.push(paramName)
 
-        pattern += '\/([A-Za-z0-9_-]+)'
+        // Note: special characters in RegEx patterns written
+        // as strings need to be double-escaped.
+        pattern += '/([\\w-]+)'
       } else {
-        pattern += '\/' + item
+        pattern += '/' + item
       }
     }
 
-    this.pattern = new RegExp(`^${pattern}$`)
+    if (queryPattern) {
+      for (let item of queryPattern.split('&')) {
+        this.queryParams.push(item)
+
+        let queryPattern = `${item}=([\\w-]+)`
+
+        this.queryPatterns.push(new RegExp(queryPattern))
+      }
+    }
+
+    this.params = this.pathParams.concat(this.queryParams)
+
+    // Pattern may optionally end with query args
+    this.pattern = new RegExp(`^${pattern}(?:\\?.*)?$`)
   }
 
   /**
@@ -48,19 +71,66 @@ class UrlMatcher {
    */
 
   exec(path) {
-    let result = this.pattern.exec(path)
+    let match = this.pattern.exec(path)
 
-    if (!result) {
+    if (!match) {
       return null
     }
 
-    let params = result.slice(1)
+    let result = {}
 
-    return this.params.reduce((memo, paramName, index) => {
-      memo[paramName] = params[index]
+    // Captured path params
+    match = match.slice(1)
 
-      return memo
-    }, {})
+    for (let [index, param] of this.pathParams.entries()) {
+      // @TODO: throw error at route definition time for duplicate params
+      if (result[param]) {
+        console.warning(`Warning: duplicate param '${paramName}'`)
+      }
+
+      result[param] = match[index]
+    }
+
+    for (let [index, param] of this.queryParams.entries()) {
+      // @TODO: throw error at route definition time for duplicate params
+      if (result[param]) {
+        console.warning(`Warning: duplicate param '${paramName}'`)
+      }
+
+      let match = this.queryPatterns[index].exec(path)
+
+      result[param] = match && match[1] || null
+    }
+
+    return result
+  }
+
+  /**
+   * @method getParams
+   * @static
+   * @description
+   * Extract param names from a URL pattern.
+   *
+   * @param {String} urlPattern
+   * @param {Function} [callback] - Optional
+   *
+   * @example
+   * UrlMatcher.getParams('/foo/:fooId/bar/:barId')
+   * -> ['fooId', 'barId']
+   */
+
+  static getParams(urlPattern) {
+    let params = []
+
+    for (let item of urlPattern.split('/')) {
+      if (item === '') continue
+
+      if(item.startsWith(':')) {
+        params.push(item.slice(1))
+      }
+    }
+
+    return params
   }
 }
 
