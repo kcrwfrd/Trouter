@@ -110,6 +110,30 @@ class Router {
   }
 
   /**
+   * @name reload
+   * @description
+   * Reloads current route with new params, optionally with
+   * a hard browser refresh.
+   *
+   * @param {Object} params
+   * @param {Boolean} hardRefresh
+   */
+
+  reload(params = {}, hardRefresh) {
+    let route = this.current.route
+
+    if (hardRefresh) {
+      this.pushState({}, route.title, this.href(route, params))
+
+      window.location.reload()
+
+      return
+    }
+
+    return this.transitionTo(route, params, { location: true })
+  }
+
+  /**
    * @method transitionTo
    * @description
    * Lower-level method for transitioning to a route.
@@ -125,12 +149,13 @@ class Router {
         return route.path.indexOf(ancestor) > -1
       })
 
-    let exitPath = this.current.path()
-      .slice(this.current.path().indexOf(nearestCommonAncestor) + 1)
-      .reverse()
+    let exitPath = (route === this.current.route) ? [route] :
+      this.current.path()
+        .slice(this.current.path().indexOf(nearestCommonAncestor) + 1)
+        .reverse()
 
-    let enterPath = route.path
-      .slice(route.path.indexOf(nearestCommonAncestor) + 1)
+    let enterPath = (route === this.current.route) ? [route] :
+      route.path.slice(route.path.indexOf(nearestCommonAncestor) + 1)
 
     // Default params to current
     params = Object.assign({}, this.current.params, params)
