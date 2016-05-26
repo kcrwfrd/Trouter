@@ -4,6 +4,7 @@ class UrlRouter {
   constructor(prefix) {
     this.prefix = prefix || '#!'
     this.rules = []
+    this.default = null
   }
 
   onChange(hash) {
@@ -16,6 +17,13 @@ class UrlRouter {
     }
 
     console.warn(`No route handler found for '${path}'`)
+
+    if (this.default && path !== this.default) {
+      let url = this.prefix + this.default
+
+      this.replaceState({}, '', url)
+      this.onChange(url)
+    }
   }
 
   listen() {
@@ -32,6 +40,38 @@ class UrlRouter {
     this.onChange(window.location.hash)
   }
 
+  /**
+   * @method pushState
+   * @description
+   * Wraps window.history.pushState.
+   *
+   * @param {Object} state
+   * @param {String} title
+   * @param {String} url
+   */
+
+  pushState(state = {}, title, url) {
+    if (window && window.history && window.history.pushState) {
+      window.history.pushState(state, title, url)
+    }
+  }
+
+  /**
+   * @method replaceState
+   * @description
+   * Wraps window.history.replaceState.
+   *
+   * @param {Object} state
+   * @param {String} title
+   * @param {String} url
+   */
+
+  replaceState(state = {}, title, url) {
+    if (window && window.history && window.history.replaceState) {
+      window.history.replaceState(state, title, url)
+    }
+  }
+
   when(url, handler) {
     let matcher = new UrlMatcher(url)
 
@@ -46,6 +86,10 @@ class UrlRouter {
 
       return true
     })
+  }
+
+  otherwise(url) {
+    this.default = url
   }
 }
 

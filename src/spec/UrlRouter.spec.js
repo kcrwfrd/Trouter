@@ -50,5 +50,16 @@ describe('UrlRouter:', () => {
         "No route handler found for '/foo/1/bar'"
       )
     })
+
+    it('Should redirect to default route if no match found.', () => {
+      spyOn(urlRouter, 'onChange').and.callThrough()
+
+      urlRouter.otherwise('/')
+
+      urlRouter.onChange('#!/foo/1/bar')
+
+      expect(urlRouter.onChange).toHaveBeenCalledWith('#!/')
+      expect(index).toHaveBeenCalled()
+    })
   })
 })
