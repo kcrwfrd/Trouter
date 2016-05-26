@@ -68,15 +68,17 @@ class Router {
    */
 
   href(route, params = {}) {
-    route = (isString(route)) ? this.registry.get(route) : route
+    let destination = (isString(route)) ? this.registry.get(route) : route
 
-    if (!route) {
-      throw new Error(`No match found for route '${route}'`)
+    if (!destination) {
+      console.error(`No match found for route '${route}'`)
+
+      return this.prefix
     }
 
     params = Object.assign({}, this.current.params, params)
 
-    return this.prefix + route.href(params)
+    return this.prefix + destination.href(params)
   }
 
   /**
