@@ -170,6 +170,11 @@ class Router {
       this.pushState({}, route.title, this.href(route, params))
     }
 
+    let previous = this.current.route
+
+    // @TODO: should current only be set after successful route change?
+    this.current.put(route, params)
+
     let promise = transition.run()
 
     // @TODO: do transitions need to be queued as well? See test
@@ -177,9 +182,12 @@ class Router {
     // second time when go is called synchronously.'
 
     promise.then(() => {
-      this.current.put(route, params)
+      // this.current.put(route, params)
     }).catch((error) => {
       // @TODO: handle errors
+      console.error(error)
+
+      this.current.put(previous)
       this.pushState({}, this.current.route.title, this.current.url())
     })
 

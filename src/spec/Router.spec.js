@@ -91,7 +91,7 @@ describe('Router:', () => {
     })
 
     // @TODO
-    xit('Should not invoke parent controller a second time when go is called synchronously.', () => {
+    it('Should not invoke parent controller a second time when go is called synchronously.', () => {
       router.go('home')
 
       return router.go('home.child')
