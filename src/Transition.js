@@ -1,3 +1,4 @@
+import {last} from './common'
 import Queue from './Queue'
 
 /**
@@ -7,7 +8,21 @@ import Queue from './Queue'
  */
 
 class Transition {
-  constructor(exitPath, enterPath, params) {
+
+  /**
+   * @param {Array.<Route>} exitPath
+   * @param {Array.<Route>} enterPath
+   * @param {Object} params
+   * @param {Transitions} transitions
+   */
+
+  constructor(exitPath, enterPath, params, transitions) {
+    let destination = last(enterPath)
+
+    this.onStartQueue = new Queue(transitions.onStartHandlers.map((handler) => {
+      return handler.bind(handler, destination)
+    }))
+
     this.exitQueue = new Queue(exitPath.map((route) => {
       return route.exit.bind(route)
     }))
@@ -18,7 +33,9 @@ class Transition {
   }
 
   run() {
-    return this.exitQueue.flush().then(() => this.enterQueue.flush())
+    return this.onStartQueue.flush()
+      .then(() => this.exitQueue.flush())
+      .then(() => this.enterQueue.flush())
   }
 }
 

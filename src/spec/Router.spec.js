@@ -342,10 +342,11 @@ describe('Router:', () => {
       })
 
       it("Should call controller's exit handler when exiting a route.", () => {
-        return router.go('gizmo')
-          .then(() => {
-            router.go('home')
+        deferred.resolve('onExit')
 
+        return router.go('gizmo')
+          .then(() => router.go('home'))
+          .then(() => {
             expect(onExit).toHaveBeenCalled()
           })
       })

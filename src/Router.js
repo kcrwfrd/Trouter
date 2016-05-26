@@ -3,6 +3,7 @@ import {isObject, isString} from './common'
 import Current from './Current'
 import Registry from './Registry'
 import Transition from './Transition'
+import Transitions from './Transitions'
 import UrlRouter from './UrlRouter'
 
 class Router {
@@ -11,6 +12,7 @@ class Router {
 
     this.urlRouter = new UrlRouter(prefix)
     this.registry = new Registry(this, this.urlRouter)
+    this.transitions = new Transitions()
 
     this.current = new Current(this, this.registry.root)
   }
@@ -160,7 +162,7 @@ class Router {
     // Default params to current
     params = Object.assign({}, this.current.params, params)
 
-    let transition = new Transition(exitPath, enterPath, params)
+    let transition = this.transitions.create(exitPath, enterPath, params)
 
     if (options.location) {
       this.pushState({}, route.title, this.href(route, params))
