@@ -1,18 +1,26 @@
 import UrlRouter from '../UrlRouter'
 
 describe('UrlRouter:', () => {
-  let urlRouter, foo, bar;
+  let urlRouter, foo, bar, index;
 
   beforeEach(() => {
     urlRouter = new UrlRouter()
+    index = jasmine.createSpy()
     foo = jasmine.createSpy()
     bar = jasmine.createSpy()
 
+    urlRouter.when('/', index)
     urlRouter.when('/foo/:fooId', foo)
     urlRouter.when('/foo/:fooId/bar/:barId', bar)
   })
 
   describe('onChange(hash):', () => {
+    it('Should call handler for an index route.', () => {
+      urlRouter.onChange('#!/')
+
+      expect(index).toHaveBeenCalled()
+    })
+
     it('Should call handler when match is found.', () => {
       urlRouter.onChange('#!/foo/1')
 

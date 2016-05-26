@@ -31,6 +31,12 @@ describe('UrlMatcher:', () => {
     it('Should match the route with query args added.', () => {
       expect(urlMatcher.exec('/foo?bar=2')).toEqual({})
     })
+
+    it('Should match an index route.', () => {
+      let urlMatcher = new UrlMatcher('/')
+
+      expect(urlMatcher.exec('/')).toEqual({})
+    })
   })
 
   describe('Routes with Params:', () => {
@@ -82,6 +88,12 @@ describe('UrlMatcher:', () => {
         fooId: '1',
         barId: null,
       })
+    })
+
+    it('Should match an index route with query param.', () => {
+      let urlMatcher = new UrlMatcher('/?foo')
+
+      expect(urlMatcher.exec('/?foo=1')).toEqual({ foo: '1' })
     })
 
     describe('With multiple query params:', () => {

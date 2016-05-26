@@ -22,6 +22,11 @@ class UrlMatcher {
 
     let [pathPattern, queryPattern] = urlPattern.split('?')
 
+    // @TODO: find a more elegant way
+    if (pathPattern === '/') {
+      pattern += '/'
+    }
+
     for (let item of pathPattern.split('/')) {
       if (item === '') continue
 
