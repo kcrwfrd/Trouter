@@ -213,11 +213,12 @@ describe('Router:', () => {
   })
 
   describe('transitionTo(route, params):', () => {
-    let foo, bar;
+    let foo, bar, baz;
 
     beforeEach(() => {
       foo = router.registry.get('foo')
       bar = router.registry.get('foo.bar')
+      baz = router.registry.get('foo.baz')
     })
 
     it('Should instantiate controller with params.', () => {
@@ -321,6 +322,38 @@ describe('Router:', () => {
         .then(() => {
           expect(foo.exit).toHaveBeenCalled()
           expect(fooCtrl.calls.count()).toBe(2)
+        })
+    })
+
+    it('Should return a promise resolved on transition success.', () => {
+      let onSuccess = jasmine.createSpy('onSuccess')
+      let onError = jasmine.createSpy('onError')
+
+      bazDeferred.reject('O SNAPS')
+
+      return router.transitionTo(baz)
+        .then(onSuccess)
+        .catch(onError)
+        .then((result) => {
+          expect(onSuccess).not.toHaveBeenCalled()
+          expect(onError).toHaveBeenCalled()
+        })
+    })
+
+    it('Should return a promise rejected on transition failure.', () => {
+      let onSuccess = jasmine.createSpy('onSuccess')
+        .and.callFake((result) => result)
+
+      let onError = jasmine.createSpy('onError')
+
+      bazDeferred.resolve('Weeee')
+
+      return router.transitionTo(baz)
+        .then(onSuccess)
+        .catch(onError)
+        .then((result) => {
+          expect(onSuccess).toHaveBeenCalled()
+          expect(onError).not.toHaveBeenCalled()
         })
     })
 
