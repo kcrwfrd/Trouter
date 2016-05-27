@@ -157,19 +157,15 @@ describe('Router:', () => {
         // let onError = jasmine.createSpy('onError')
         // router.on('error', onError)
 
-        spyOn(console, 'error')
-
         deferred.reject('bar')
 
         return router.go('foo').catch(() => {
           expect(controller).not.toHaveBeenCalled()
-          expect(console.error).toHaveBeenCalledWith('bar')
         })
       })
 
       it('Should not invoke a child route if parent resolve was rejected.', () => {
         let controller = jasmine.createSpy('controller')
-        spyOn(console, 'error')
 
         router.route('foo.bar', {
           parent: 'foo',
@@ -180,7 +176,6 @@ describe('Router:', () => {
 
         return router.go('foo.bar').catch(() => {
           expect(controller).not.toHaveBeenCalled()
-          expect(console.error).toHaveBeenCalledWith('rejected')
         })
       })
     })
@@ -396,15 +391,12 @@ describe('Router:', () => {
       })
 
       it('Should not change routes when exit handler is rejected.', () => {
-        spyOn(console, 'error')
-
         deferred.reject('onExit')
 
         return router.go('gizmo')
           .then(() => router.go('home'), () => {})
           .catch(() => {
             expect(onExit).toHaveBeenCalled()
-            expect(console.error).toHaveBeenCalledWith('onExit')
             expect(homeCtrl).not.toHaveBeenCalled()
           })
       })

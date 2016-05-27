@@ -114,40 +114,41 @@ class Route {
    * @description
    * Route becomes active, instantiating its controller
    * if one is defined.
+   *
+   * @returns {Promise}
    */
 
   enter(params = {}) {
     let promise = getResolve(this.resolve, params)
 
-    promise.then((resolve) => {
+    return promise.then((resolve) => {
       if (this.Controller) {
         this.controller = new this.Controller(params, resolve)
       }
 
-      document.title = this.title
-
-    }).catch((error) => {
-      // @TODO: handle errors
-      console.error(error)
+      return resolve
     })
-
-    return promise
   }
+
+  /**
+   * @method exit
+   * @description
+   * Route exits, calling controller.onExit and deleting its reference.
+   *
+   * @returns {Promise}
+   */
 
   exit() {
     let promise = (this.controller && this.controller.onExit) ?
       Promise.resolve(this.controller.onExit()) : Promise.resolve()
 
-    promise.then(() => {
+    return promise.then((result) => {
       if (this.controller) {
         this.controller = null
       }
-    }).catch((error) => {
-      // @TODO: handle errors
-      console.error(error)
-    })
 
-    return promise
+      return result
+    })
   }
 }
 
