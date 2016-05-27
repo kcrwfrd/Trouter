@@ -180,8 +180,13 @@ class Router {
     // second time when go is called synchronously.'
 
     return transition.run()
-      .then((result) => this.current)
-      .catch((error) => {
+      .then((result) => {
+        for (let handler of this.transitions.onSuccessHandlers) {
+          handler(this.current)
+        }
+
+        return this.current
+      }).catch((error) => {
         this.current.put(previous)
 
         this.pushState({}, this.current.route.title, this.current.url())
