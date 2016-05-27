@@ -175,23 +175,20 @@ class Router {
     // @TODO: should current only be set after successful route change?
     this.current.put(route, params)
 
-    let promise = transition.run()
-
     // @TODO: do transitions need to be queued as well? See test
     // 'Router: go(name): Should not invoke parent controller a
     // second time when go is called synchronously.'
 
-    promise.then(() => {
-      // this.current.put(route, params)
-    }).catch((error) => {
-      // @TODO: handle errors
-      console.error(error)
+    return transition.run()
+      .then((result) => this.current)
+      .catch((error) => {
+        this.current.put(previous)
 
-      this.current.put(previous)
-      this.pushState({}, this.current.route.title, this.current.url())
-    })
+        this.pushState({}, this.current.route.title, this.current.url())
 
-    return promise
+        // Continue propagating the error down the promise chain
+        throw error
+      })
   }
 
 }

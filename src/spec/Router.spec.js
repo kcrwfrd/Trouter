@@ -157,19 +157,15 @@ describe('Router:', () => {
         // let onError = jasmine.createSpy('onError')
         // router.on('error', onError)
 
-        spyOn(console, 'error')
-
         deferred.reject('bar')
 
         return router.go('foo').catch(() => {
           expect(controller).not.toHaveBeenCalled()
-          expect(console.error).toHaveBeenCalledWith('bar')
         })
       })
 
       it('Should not invoke a child route if parent resolve was rejected.', () => {
         let controller = jasmine.createSpy('controller')
-        spyOn(console, 'error')
 
         router.route('foo.bar', {
           parent: 'foo',
@@ -180,7 +176,6 @@ describe('Router:', () => {
 
         return router.go('foo.bar').catch(() => {
           expect(controller).not.toHaveBeenCalled()
-          expect(console.error).toHaveBeenCalledWith('rejected')
         })
       })
     })
@@ -213,11 +208,12 @@ describe('Router:', () => {
   })
 
   describe('transitionTo(route, params):', () => {
-    let foo, bar;
+    let foo, bar, baz;
 
     beforeEach(() => {
       foo = router.registry.get('foo')
       bar = router.registry.get('foo.bar')
+      baz = router.registry.get('foo.baz')
     })
 
     it('Should instantiate controller with params.', () => {
@@ -324,6 +320,38 @@ describe('Router:', () => {
         })
     })
 
+    it('Should return a promise resolved on transition success.', () => {
+      let onSuccess = jasmine.createSpy('onSuccess')
+      let onError = jasmine.createSpy('onError')
+
+      bazDeferred.reject('O SNAPS')
+
+      return router.transitionTo(baz)
+        .then(onSuccess)
+        .catch(onError)
+        .then((result) => {
+          expect(onSuccess).not.toHaveBeenCalled()
+          expect(onError).toHaveBeenCalled()
+        })
+    })
+
+    it('Should return a promise rejected on transition failure.', () => {
+      let onSuccess = jasmine.createSpy('onSuccess')
+        .and.callFake((result) => result)
+
+      let onError = jasmine.createSpy('onError')
+
+      bazDeferred.resolve('Weeee')
+
+      return router.transitionTo(baz)
+        .then(onSuccess)
+        .catch(onError)
+        .then((result) => {
+          expect(onSuccess).toHaveBeenCalled()
+          expect(onError).not.toHaveBeenCalled()
+        })
+    })
+
     describe('With Exit Handlers:', () => {
       let deferred, onExit;
 
@@ -363,15 +391,12 @@ describe('Router:', () => {
       })
 
       it('Should not change routes when exit handler is rejected.', () => {
-        spyOn(console, 'error')
-
         deferred.reject('onExit')
 
         return router.go('gizmo')
           .then(() => router.go('home'), () => {})
           .catch(() => {
             expect(onExit).toHaveBeenCalled()
-            expect(console.error).toHaveBeenCalledWith('onExit')
             expect(homeCtrl).not.toHaveBeenCalled()
           })
       })
