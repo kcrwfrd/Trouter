@@ -13,7 +13,17 @@ import Transition from './Transition'
 
 class Transitions {
   constructor(){
+    this.onErrorHandlers = []
     this.onStartHandlers = []
+    this.onSuccessHandlers = []
+  }
+
+  onError(handler) {
+    if (typeof handler !== 'function') {
+      throw new Error(`Handler must be a function, was '${typeof handler}' instead`)
+    }
+
+    this.onErrorHandlers.push(handler)
   }
 
   /**
@@ -36,6 +46,14 @@ class Transitions {
     }
 
     this.onStartHandlers.push(handler)
+  }
+
+  onSuccess(handler) {
+    if (typeof handler !== 'function') {
+      throw new Error(`Handler must be a function, was '${typeof handler}' instead`)
+    }
+
+    this.onSuccessHandlers.push(handler)
   }
 
   create(exitPath, enterPath, params) {

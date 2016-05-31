@@ -171,6 +171,7 @@ class Router {
     }
 
     let previous = this.current.route
+    let previousParams = this.current.params
 
     // @TODO: should current only be set after successful route change?
     this.current.put(route, params)
@@ -180,11 +181,20 @@ class Router {
     // second time when go is called synchronously.'
 
     return transition.run()
-      .then((result) => this.current)
-      .catch((error) => {
-        this.current.put(previous)
+      .then((result) => {
+        for (let handler of this.transitions.onSuccessHandlers) {
+          handler(this.current)
+        }
+
+        return this.current
+      }).catch((error) => {
+        this.current.put(previous, previousParams)
 
         this.pushState({}, this.current.route.title, this.current.url())
+
+        for (let handler of this.transitions.onErrorHandlers) {
+          handler(error)
+        }
 
         // Continue propagating the error down the promise chain
         throw error
