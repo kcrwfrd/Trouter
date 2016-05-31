@@ -60,6 +60,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
+	var _getIterator2 = __webpack_require__(100);
+	
+	var _getIterator3 = _interopRequireDefault(_getIterator2);
+	
 	var _assign = __webpack_require__(1);
 	
 	var _assign2 = _interopRequireDefault(_assign);
@@ -297,27 +301,76 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	
 	      var previous = this.current.route;
+	      var previousParams = this.current.params;
 	
 	      // @TODO: should current only be set after successful route change?
 	      this.current.put(route, params);
-	
-	      var promise = transition.run();
 	
 	      // @TODO: do transitions need to be queued as well? See test
 	      // 'Router: go(name): Should not invoke parent controller a
 	      // second time when go is called synchronously.'
 	
-	      promise.then(function () {
-	        // this.current.put(route, params)
+	      return transition.run().then(function (result) {
+	        var _iteratorNormalCompletion = true;
+	        var _didIteratorError = false;
+	        var _iteratorError = undefined;
+	
+	        try {
+	          for (var _iterator = (0, _getIterator3.default)(_this.transitions.onSuccessHandlers), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	            var handler = _step.value;
+	
+	            handler(_this.current);
+	          }
+	        } catch (err) {
+	          _didIteratorError = true;
+	          _iteratorError = err;
+	        } finally {
+	          try {
+	            if (!_iteratorNormalCompletion && _iterator.return) {
+	              _iterator.return();
+	            }
+	          } finally {
+	            if (_didIteratorError) {
+	              throw _iteratorError;
+	            }
+	          }
+	        }
+	
+	        return _this.current;
 	      }).catch(function (error) {
-	        // @TODO: handle errors
-	        console.error(error);
+	        _this.current.put(previous, previousParams);
 	
-	        _this.current.put(previous);
 	        _this.pushState({}, _this.current.route.title, _this.current.url());
-	      });
 	
-	      return promise;
+	        var _iteratorNormalCompletion2 = true;
+	        var _didIteratorError2 = false;
+	        var _iteratorError2 = undefined;
+	
+	        try {
+	          for (var _iterator2 = (0, _getIterator3.default)(_this.transitions.onErrorHandlers), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+	            var handler = _step2.value;
+	
+	            handler(error);
+	          }
+	
+	          // Continue propagating the error down the promise chain
+	        } catch (err) {
+	          _didIteratorError2 = true;
+	          _iteratorError2 = err;
+	        } finally {
+	          try {
+	            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+	              _iterator2.return();
+	            }
+	          } finally {
+	            if (_didIteratorError2) {
+	              throw _iteratorError2;
+	            }
+	          }
+	        }
+	
+	        throw error;
+	      });
 	    }
 	  }]);
 	  return Router;
@@ -2884,6 +2937,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @description
 	     * Route becomes active, instantiating its controller
 	     * if one is defined.
+	     *
+	     * @returns {Promise}
 	     */
 	
 	  }, {
@@ -2895,19 +2950,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	      var promise = getResolve(this.resolve, params);
 	
-	      promise.then(function (resolve) {
+	      return promise.then(function (resolve) {
 	        if (_this.Controller) {
 	          _this.controller = new _this.Controller(params, resolve);
 	        }
 	
-	        document.title = _this.title;
-	      }).catch(function (error) {
-	        // @TODO: handle errors
-	        console.error(error);
+	        return resolve;
 	      });
-	
-	      return promise;
 	    }
+	
+	    /**
+	     * @method exit
+	     * @description
+	     * Route exits, calling controller.onExit and deleting its reference.
+	     *
+	     * @returns {Promise}
+	     */
+	
 	  }, {
 	    key: 'exit',
 	    value: function exit() {
@@ -2915,16 +2974,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	      var promise = this.controller && this.controller.onExit ? _promise2.default.resolve(this.controller.onExit()) : _promise2.default.resolve();
 	
-	      promise.then(function () {
+	      return promise.then(function (result) {
 	        if (_this2.controller) {
 	          _this2.controller = null;
 	        }
-	      }).catch(function (error) {
-	        // @TODO: handle errors
-	        console.error(error);
-	      });
 	
-	      return promise;
+	        return result;
+	      });
 	    }
 	  }]);
 	  return Route;
@@ -3782,24 +3838,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	  function Transitions() {
 	    (0, _classCallCheck3.default)(this, Transitions);
 	
+	    this.onErrorHandlers = [];
 	    this.onStartHandlers = [];
+	    this.onSuccessHandlers = [];
 	  }
 	
-	  /**
-	   * @method onStart
-	   * @description
-	   * Registers a callback handler called on transition start.
-	   * Handler may return a promise to cancel route transition.
-	   *
-	   * @TODO support returning Boolean to cancel or continue transition.
-	   *
-	   * @param {Function} handler
-	   *
-	   * @callback handler
-	   * @param {Route} destination
-	   */
-	
 	  (0, _createClass3.default)(Transitions, [{
+	    key: 'onError',
+	    value: function onError(handler) {
+	      if (typeof handler !== 'function') {
+	        throw new Error('Handler must be a function, was \'' + (typeof handler === 'undefined' ? 'undefined' : (0, _typeof3.default)(handler)) + '\' instead');
+	      }
+	
+	      this.onErrorHandlers.push(handler);
+	    }
+	
+	    /**
+	     * @method onStart
+	     * @description
+	     * Registers a callback handler called on transition start.
+	     * Handler may return a promise to cancel route transition.
+	     *
+	     * @TODO support returning Boolean to cancel or continue transition.
+	     *
+	     * @param {Function} handler
+	     *
+	     * @callback handler
+	     * @param {Route} destination
+	     */
+	
+	  }, {
 	    key: 'onStart',
 	    value: function onStart(handler) {
 	      if (typeof handler !== 'function') {
@@ -3807,6 +3875,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	
 	      this.onStartHandlers.push(handler);
+	    }
+	  }, {
+	    key: 'onSuccess',
+	    value: function onSuccess(handler) {
+	      if (typeof handler !== 'function') {
+	        throw new Error('Handler must be a function, was \'' + (typeof handler === 'undefined' ? 'undefined' : (0, _typeof3.default)(handler)) + '\' instead');
+	      }
+	
+	      this.onSuccessHandlers.push(handler);
 	    }
 	  }, {
 	    key: 'create',
