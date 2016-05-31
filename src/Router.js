@@ -191,6 +191,10 @@ class Router {
 
         this.pushState({}, this.current.route.title, this.current.url())
 
+        for (let handler of this.transitions.onErrorHandlers) {
+          handler(error)
+        }
+
         // Continue propagating the error down the promise chain
         throw error
       })
