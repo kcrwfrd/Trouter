@@ -171,6 +171,7 @@ class Router {
     }
 
     let previous = this.current.route
+    let previousParams = this.current.params
 
     // @TODO: should current only be set after successful route change?
     this.current.put(route, params)
@@ -187,7 +188,7 @@ class Router {
 
         return this.current
       }).catch((error) => {
-        this.current.put(previous)
+        this.current.put(previous, previousParams)
 
         this.pushState({}, this.current.route.title, this.current.url())
 
