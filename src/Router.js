@@ -14,7 +14,9 @@ class Router {
     this.registry = new Registry(this, this.urlRouter)
     this.transitions = new Transitions()
 
+    // @TODO refactor current/previous into a full history stack
     this.current = new Current(this, this.registry.root)
+    this.previous = new Current(this, null)
   }
 
   /**
@@ -185,6 +187,8 @@ class Router {
         for (let handler of this.transitions.onSuccessHandlers) {
           handler(this.current)
         }
+
+        this.previous.put(previous, previousParams)
 
         return this.current
       }).catch((error) => {
