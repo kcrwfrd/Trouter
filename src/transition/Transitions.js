@@ -56,9 +56,13 @@ class Transitions {
     this.onSuccessHandlers.push(handler)
   }
 
-  create(exitPath, enterPath, params) {
-    return new Transition(exitPath, enterPath, params, this)
+  create(...args) {
+    return new Transition(this, ...args)
   }
+
+  // create(exitPath, enterPath, params) {
+  //   return new Transition(exitPath, enterPath, params, this)
+  // }
 }
 
 export default Transitions
