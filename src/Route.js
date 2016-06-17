@@ -1,5 +1,4 @@
 import _ from 'lodash'
-import {isObject, defer} from './common'
 import UrlMatcher from './UrlMatcher'
 
 /**
