@@ -2,17 +2,36 @@ import Route from '../Route'
 import {defer} from '../common'
 
 describe('Route:', () => {
-  it('Should properly instantiate.', () => {
-    let route = new Route({
+  let route;
+
+  beforeEach(() => {
+    route = new Route({
       name: 'foo',
-      url: '/foo',
+      url: '/foo/:fooId/bar/:barId',
       controller: () => {},
       path: []
     })
+  })
 
+  it('Should properly instantiate.', () => {
     expect(route).toBeDefined()
     expect(route.getRoot()).toBe(route)
     expect(route.getFqn()).toBe('foo')
+  })
+
+  it('Should parse param names from URL pattern.', () => {
+    expect(route.params).toEqual(['fooId', 'barId'])
+  })
+
+  it('Should not have parent route params.', () => {
+    let child = new Route({
+      name: 'foo.bat',
+      url: '/bat/:batId',
+      parent: route,
+      path: [route],
+    })
+
+    expect(child.params).toEqual(['batId'])
   })
 
   describe('Resolve:', () => {

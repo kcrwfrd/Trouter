@@ -2,8 +2,8 @@ import _ from 'lodash'
 import {isObject, isString} from './common'
 import Current from './Current'
 import Registry from './Registry'
-import Transition from './Transition'
-import Transitions from './Transitions'
+import Transition from './transition/Transition'
+import Transitions from './transition/Transitions'
 import UrlRouter from './UrlRouter'
 
 class Router {
@@ -149,24 +149,9 @@ class Router {
    */
 
   transitionTo(route, params = {}, options = {}) {
-    // @TODO: refactor into transition manager
-    let nearestCommonAncestor =
-      _.findLast(this.current.path(), (ancestor) => {
-        return route.path.indexOf(ancestor) > -1
-      })
-
-    let exitPath = (route === this.current.route) ? [route] :
-      this.current.path()
-        .slice(this.current.path().indexOf(nearestCommonAncestor) + 1)
-        .reverse()
-
-    let enterPath = (route === this.current.route) ? [route] :
-      route.path.slice(route.path.indexOf(nearestCommonAncestor) + 1)
-
-    // Default params to current
-    params = Object.assign({}, this.current.params, params)
-
-    let transition = this.transitions.create(exitPath, enterPath, params)
+    let transition = this.transitions.create(
+      this.current.route, route, this.current.params, params
+    )
 
     if (options.location) {
       this.pushState({}, route.title, this.href(route, params))
