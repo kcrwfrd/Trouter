@@ -90,15 +90,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _Registry2 = _interopRequireDefault(_Registry);
 	
-	var _Transition = __webpack_require__(107);
+	var _Transition = __webpack_require__(108);
 	
 	var _Transition2 = _interopRequireDefault(_Transition);
 	
-	var _Transitions = __webpack_require__(109);
+	var _Transitions = __webpack_require__(110);
 	
 	var _Transitions2 = _interopRequireDefault(_Transitions);
 	
-	var _UrlRouter = __webpack_require__(110);
+	var _UrlRouter = __webpack_require__(111);
 	
 	var _UrlRouter2 = _interopRequireDefault(_UrlRouter);
 	
@@ -284,19 +284,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var params = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 	
-	      // @TODO: refactor into transition manager
-	      var nearestCommonAncestor = _lodash2.default.findLast(this.current.path(), function (ancestor) {
-	        return route.path.indexOf(ancestor) > -1;
-	      });
-	
-	      var exitPath = route === this.current.route ? [route] : this.current.path().slice(this.current.path().indexOf(nearestCommonAncestor) + 1).reverse();
-	
-	      var enterPath = route === this.current.route ? [route] : route.path.slice(route.path.indexOf(nearestCommonAncestor) + 1);
-	
-	      // Default params to current
-	      params = (0, _assign2.default)({}, this.current.params, params);
-	
-	      var transition = this.transitions.create(exitPath, enterPath, params);
+	      var transition = this.transitions.create(this.current.route, route, this.current.params, params);
 	
 	      if (options.location) {
 	        this.pushState({}, route.title, this.href(route, params));
@@ -2809,7 +2797,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _lodash2 = _interopRequireDefault(_lodash);
 	
-	var _common = __webpack_require__(66);
+	var _UrlMatcher = __webpack_require__(107);
+	
+	var _UrlMatcher2 = _interopRequireDefault(_UrlMatcher);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -2836,6 +2826,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	    url = url || '';
+	
+	    if (url) {
+	      // @TODO abstract param parsing out from UrlMatcher.
+	      // We parse this routes URL before prepending parents so
+	      // we only have this route's params.
+	      var urlMatcher = new _UrlMatcher2.default(url);
+	    }
+	
+	    this.params = urlMatcher && urlMatcher.params || [];
 	
 	    // Prepend URL with parent's URL
 	    // @TODO: should each route only be concerned with its section of the url?
@@ -3209,411 +3208,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
-	var _classCallCheck2 = __webpack_require__(60);
-	
-	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
-	
-	var _createClass2 = __webpack_require__(61);
-	
-	var _createClass3 = _interopRequireDefault(_createClass2);
-	
-	var _common = __webpack_require__(66);
-	
-	var _Queue = __webpack_require__(108);
-	
-	var _Queue2 = _interopRequireDefault(_Queue);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	/**
-	 * @name Transition
-	 * @description
-	 * Manages route transitions
-	 */
-	
-	var Transition = function () {
-	
-	  /**
-	   * @param {Array.<Route>} exitPath
-	   * @param {Array.<Route>} enterPath
-	   * @param {Object} params
-	   * @param {Transitions} transitions
-	   */
-	
-	  function Transition(exitPath, enterPath, params, transitions) {
-	    (0, _classCallCheck3.default)(this, Transition);
-	
-	    var destination = (0, _common.last)(enterPath);
-	
-	    this.onStartQueue = new _Queue2.default(transitions.onStartHandlers.map(function (handler) {
-	      return handler.bind(handler, destination);
-	    }));
-	
-	    this.exitQueue = new _Queue2.default(exitPath.map(function (route) {
-	      return route.exit.bind(route);
-	    }));
-	
-	    this.enterQueue = new _Queue2.default(enterPath.map(function (route) {
-	      return route.enter.bind(route, params);
-	    }));
-	  }
-	
-	  (0, _createClass3.default)(Transition, [{
-	    key: 'run',
-	    value: function run() {
-	      var _this = this;
-	
-	      return this.onStartQueue.flush().then(function () {
-	        return _this.exitQueue.flush();
-	      }).then(function () {
-	        return _this.enterQueue.flush();
-	      });
-	    }
-	  }]);
-	  return Transition;
-	}();
-	
-	exports.default = Transition;
-
-/***/ },
-/* 108 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _promise = __webpack_require__(67);
-	
-	var _promise2 = _interopRequireDefault(_promise);
-	
-	var _classCallCheck2 = __webpack_require__(60);
-	
-	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
-	
-	var _createClass2 = __webpack_require__(61);
-	
-	var _createClass3 = _interopRequireDefault(_createClass2);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	/**
-	 * @name Queue
-	 * @description
-	 * A promise queue. Sequentially invokes a queue of functions that
-	 * each return a promise. The next function is called on successful
-	 * resolution of the current function's promise.
-	 */
-	
-	var Queue = function () {
-	  function Queue() {
-	    var queue = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-	    (0, _classCallCheck3.default)(this, Queue);
-	
-	    this.queue = queue;
-	  }
-	
-	  (0, _createClass3.default)(Queue, [{
-	    key: "flush",
-	    value: function flush() {
-	      if (this.queue.length === 0) {
-	        return _promise2.default.resolve();
-	      }
-	
-	      var first = this.queue.shift();
-	
-	      return this.queue.reduce(function (current, next) {
-	        return current.then(function () {
-	          return next();
-	        });
-	      }, first());
-	    }
-	  }]);
-	  return Queue;
-	}();
-	
-	exports.default = Queue;
-
-/***/ },
-/* 109 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _typeof2 = __webpack_require__(84);
-	
-	var _typeof3 = _interopRequireDefault(_typeof2);
-	
-	var _classCallCheck2 = __webpack_require__(60);
-	
-	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
-	
-	var _createClass2 = __webpack_require__(61);
-	
-	var _createClass3 = _interopRequireDefault(_createClass2);
-	
-	var _Transition = __webpack_require__(107);
-	
-	var _Transition2 = _interopRequireDefault(_Transition);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	/**
-	 * @name Transitions
-	 * @description
-	 * Registers global transition hooks.
-	 *
-	 * @TODO
-	 * - Implement additional transition lifecycle hooks
-	 * - Support handlers returning Boolean
-	 * - Write tests
-	 */
-	
-	var Transitions = function () {
-	  function Transitions() {
-	    (0, _classCallCheck3.default)(this, Transitions);
-	
-	    this.onErrorHandlers = [];
-	    this.onStartHandlers = [];
-	    this.onSuccessHandlers = [];
-	  }
-	
-	  (0, _createClass3.default)(Transitions, [{
-	    key: 'onError',
-	    value: function onError(handler) {
-	      if (typeof handler !== 'function') {
-	        throw new Error('Handler must be a function, was \'' + (typeof handler === 'undefined' ? 'undefined' : (0, _typeof3.default)(handler)) + '\' instead');
-	      }
-	
-	      this.onErrorHandlers.push(handler);
-	    }
-	
-	    /**
-	     * @method onStart
-	     * @description
-	     * Registers a callback handler called on transition start.
-	     * Handler may return a promise to cancel route transition.
-	     *
-	     * @TODO support returning Boolean to cancel or continue transition.
-	     *
-	     * @param {Function} handler
-	     *
-	     * @callback handler
-	     * @param {Route} destination
-	     */
-	
-	  }, {
-	    key: 'onStart',
-	    value: function onStart(handler) {
-	      if (typeof handler !== 'function') {
-	        throw new Error('Handler must be a function, was \'' + (typeof handler === 'undefined' ? 'undefined' : (0, _typeof3.default)(handler)) + '\' instead');
-	      }
-	
-	      this.onStartHandlers.push(handler);
-	    }
-	  }, {
-	    key: 'onSuccess',
-	    value: function onSuccess(handler) {
-	      if (typeof handler !== 'function') {
-	        throw new Error('Handler must be a function, was \'' + (typeof handler === 'undefined' ? 'undefined' : (0, _typeof3.default)(handler)) + '\' instead');
-	      }
-	
-	      this.onSuccessHandlers.push(handler);
-	    }
-	  }, {
-	    key: 'create',
-	    value: function create(exitPath, enterPath, params) {
-	      return new _Transition2.default(exitPath, enterPath, params, this);
-	    }
-	  }]);
-	  return Transitions;
-	}();
-	
-	exports.default = Transitions;
-
-/***/ },
-/* 110 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _getIterator2 = __webpack_require__(1);
-	
-	var _getIterator3 = _interopRequireDefault(_getIterator2);
-	
-	var _classCallCheck2 = __webpack_require__(60);
-	
-	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
-	
-	var _createClass2 = __webpack_require__(61);
-	
-	var _createClass3 = _interopRequireDefault(_createClass2);
-	
-	var _UrlMatcher = __webpack_require__(111);
-	
-	var _UrlMatcher2 = _interopRequireDefault(_UrlMatcher);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	var UrlRouter = function () {
-	  function UrlRouter(prefix) {
-	    (0, _classCallCheck3.default)(this, UrlRouter);
-	
-	    this.prefix = prefix || '#!';
-	    this.rules = [];
-	    this.default = null;
-	  }
-	
-	  (0, _createClass3.default)(UrlRouter, [{
-	    key: 'onChange',
-	    value: function onChange(hash) {
-	      var path = hash.replace(this.prefix, '');
-	
-	      var _iteratorNormalCompletion = true;
-	      var _didIteratorError = false;
-	      var _iteratorError = undefined;
-	
-	      try {
-	        for (var _iterator = (0, _getIterator3.default)(this.rules), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	          var rule = _step.value;
-	
-	          if (rule(path)) {
-	            return true;
-	          }
-	        }
-	      } catch (err) {
-	        _didIteratorError = true;
-	        _iteratorError = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion && _iterator.return) {
-	            _iterator.return();
-	          }
-	        } finally {
-	          if (_didIteratorError) {
-	            throw _iteratorError;
-	          }
-	        }
-	      }
-	
-	      console.warn('No route handler found for \'' + path + '\'');
-	
-	      if (this.default && path !== this.default) {
-	        var url = this.prefix + this.default;
-	
-	        this.replaceState({}, '', url);
-	        this.onChange(url);
-	      }
-	    }
-	  }, {
-	    key: 'listen',
-	    value: function listen() {
-	      var _this = this;
-	
-	      // @TODO: normalize popstate/hashchange
-	      window.addEventListener('hashchange', function (event) {
-	        // this.onChange(window.location.hash)
-	      });
-	
-	      window.addEventListener('popstate', function (event) {
-	        _this.onChange(window.location.hash);
-	      });
-	
-	      // Handle the current hash
-	      this.onChange(window.location.hash);
-	    }
-	
-	    /**
-	     * @method pushState
-	     * @description
-	     * Wraps window.history.pushState.
-	     *
-	     * @param {Object} state
-	     * @param {String} title
-	     * @param {String} url
-	     */
-	
-	  }, {
-	    key: 'pushState',
-	    value: function pushState() {
-	      var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	      var title = arguments[1];
-	      var url = arguments[2];
-	
-	      if (window && window.history && window.history.pushState) {
-	        window.history.pushState(state, title, url);
-	      }
-	    }
-	
-	    /**
-	     * @method replaceState
-	     * @description
-	     * Wraps window.history.replaceState.
-	     *
-	     * @param {Object} state
-	     * @param {String} title
-	     * @param {String} url
-	     */
-	
-	  }, {
-	    key: 'replaceState',
-	    value: function replaceState() {
-	      var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-	      var title = arguments[1];
-	      var url = arguments[2];
-	
-	      if (window && window.history && window.history.replaceState) {
-	        window.history.replaceState(state, title, url);
-	      }
-	    }
-	  }, {
-	    key: 'when',
-	    value: function when(url, handler) {
-	      var matcher = new _UrlMatcher2.default(url);
-	
-	      this.rules.push(function (path) {
-	        var result = matcher.exec(path);
-	
-	        if (!result) {
-	          return false;
-	        }
-	
-	        handler(result);
-	
-	        return true;
-	      });
-	    }
-	  }, {
-	    key: 'otherwise',
-	    value: function otherwise(url) {
-	      this.default = url;
-	    }
-	  }]);
-	  return UrlRouter;
-	}();
-	
-	exports.default = UrlRouter;
-
-/***/ },
-/* 111 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
 	var _getIterator2 = __webpack_require__(1);
 	
 	var _getIterator3 = _interopRequireDefault(_getIterator2);
@@ -3899,6 +3493,472 @@ return /******/ (function(modules) { // webpackBootstrap
 	}();
 	
 	exports.default = UrlMatcher;
+
+/***/ },
+/* 108 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _classCallCheck2 = __webpack_require__(60);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(61);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _lodash = __webpack_require__(65);
+	
+	var _lodash2 = _interopRequireDefault(_lodash);
+	
+	var _Queue = __webpack_require__(109);
+	
+	var _Queue2 = _interopRequireDefault(_Queue);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	/**
+	 * @name Transition
+	 * @description
+	 * Manages route transitions
+	 */
+	
+	var Transition = function () {
+	
+	  /**
+	   * @param {Transitions} transitions
+	   * @param {Route} current
+	   * @param {Route} target
+	   * @param {Object} [currentParams]
+	   * @param {Object} [toParams]
+	   */
+	
+	  function Transition(transitions, current, target) {
+	    var currentParams = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
+	    var toParams = arguments.length <= 4 || arguments[4] === undefined ? {} : arguments[4];
+	    (0, _classCallCheck3.default)(this, Transition);
+	
+	    // If a parent param has changed, we'll need to reload from there
+	    var changedParams = _lodash2.default.reduce(currentParams, function (memo, value, key) {
+	      if (key in toParams && toParams[key] !== value) {
+	        memo[key] = toParams[key];
+	      }
+	
+	      return memo;
+	    }, {});
+	
+	    // @TODO refactor path traversal into PathFactory
+	
+	    var nearestCommonAncestor = _lodash2.default.findLast(current.path, function (ancestor) {
+	      return target.path.indexOf(ancestor) > -1;
+	    });
+	
+	    // We'll need to reload starting from here if a param changed
+	    var minStartIndex = target.path.findIndex(function (route, index) {
+	      return route.params.some(function (param) {
+	        return param in changedParams;
+	      });
+	    });
+	
+	    // Determine which node in the entering target's path to start from
+	    var enterIndex = function () {
+	      var fromAncestor = target.path.indexOf(nearestCommonAncestor) + 1;
+	
+	      if (current === target && minStartIndex < 0) {
+	        return target.path.length - 1;
+	      }
+	
+	      if (minStartIndex < 0 || fromAncestor < minStartIndex) {
+	        return fromAncestor;
+	      }
+	
+	      return minStartIndex;
+	    }();
+	
+	    this.enterPath = target.path.slice(enterIndex);
+	
+	    // Determine last node in the exiting route's path to exit
+	    var exitIndex = function () {
+	      var enterStart = target.path[enterIndex];
+	
+	      var changedAncestorIndex = current.path.indexOf(enterStart);
+	
+	      if (changedAncestorIndex >= 0) {
+	        return changedAncestorIndex;
+	      }
+	
+	      return current.path.indexOf(nearestCommonAncestor) + 1;
+	    }();
+	
+	    this.exitPath = current.path.slice(exitIndex).reverse();
+	
+	    this.onStartQueue = new _Queue2.default(transitions.onStartHandlers.map(function (handler) {
+	      return handler.bind(handler, target);
+	    }));
+	
+	    this.exitQueue = new _Queue2.default(this.exitPath.map(function (route) {
+	      return route.exit.bind(route);
+	    }));
+	
+	    this.enterQueue = new _Queue2.default(this.enterPath.map(function (route) {
+	      return route.enter.bind(route, toParams);
+	    }));
+	  }
+	
+	  (0, _createClass3.default)(Transition, [{
+	    key: 'run',
+	    value: function run() {
+	      var _this = this;
+	
+	      return this.onStartQueue.flush().then(function () {
+	        return _this.exitQueue.flush();
+	      }).then(function () {
+	        return _this.enterQueue.flush();
+	      });
+	    }
+	  }]);
+	  return Transition;
+	}();
+	
+	exports.default = Transition;
+
+/***/ },
+/* 109 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _promise = __webpack_require__(67);
+	
+	var _promise2 = _interopRequireDefault(_promise);
+	
+	var _classCallCheck2 = __webpack_require__(60);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(61);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	/**
+	 * @name Queue
+	 * @description
+	 * A promise queue. Sequentially invokes a queue of functions that
+	 * each return a promise. The next function is called on successful
+	 * resolution of the current function's promise.
+	 */
+	
+	var Queue = function () {
+	  function Queue() {
+	    var queue = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
+	    (0, _classCallCheck3.default)(this, Queue);
+	
+	    this.queue = queue;
+	  }
+	
+	  (0, _createClass3.default)(Queue, [{
+	    key: "flush",
+	    value: function flush() {
+	      if (this.queue.length === 0) {
+	        return _promise2.default.resolve();
+	      }
+	
+	      var first = this.queue.shift();
+	
+	      return this.queue.reduce(function (current, next) {
+	        return current.then(function () {
+	          return next();
+	        });
+	      }, first());
+	    }
+	  }]);
+	  return Queue;
+	}();
+	
+	exports.default = Queue;
+
+/***/ },
+/* 110 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _typeof2 = __webpack_require__(84);
+	
+	var _typeof3 = _interopRequireDefault(_typeof2);
+	
+	var _classCallCheck2 = __webpack_require__(60);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(61);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _Transition = __webpack_require__(108);
+	
+	var _Transition2 = _interopRequireDefault(_Transition);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	/**
+	 * @name Transitions
+	 * @description
+	 * Registers global transition hooks.
+	 *
+	 * @TODO
+	 * - Implement additional transition lifecycle hooks
+	 * - Support handlers returning Boolean
+	 * - Write tests
+	 */
+	
+	var Transitions = function () {
+	  function Transitions() {
+	    (0, _classCallCheck3.default)(this, Transitions);
+	
+	    this.onErrorHandlers = [];
+	    this.onStartHandlers = [];
+	    this.onSuccessHandlers = [];
+	  }
+	
+	  (0, _createClass3.default)(Transitions, [{
+	    key: 'onError',
+	    value: function onError(handler) {
+	      if (typeof handler !== 'function') {
+	        throw new Error('Handler must be a function, was \'' + (typeof handler === 'undefined' ? 'undefined' : (0, _typeof3.default)(handler)) + '\' instead');
+	      }
+	
+	      this.onErrorHandlers.push(handler);
+	    }
+	
+	    /**
+	     * @method onStart
+	     * @description
+	     * Registers a callback handler called on transition start.
+	     * Handler may return a promise to cancel route transition.
+	     *
+	     * @TODO support returning Boolean to cancel or continue transition.
+	     *
+	     * @param {Function} handler
+	     *
+	     * @callback handler
+	     * @param {Route} destination
+	     */
+	
+	  }, {
+	    key: 'onStart',
+	    value: function onStart(handler) {
+	      if (typeof handler !== 'function') {
+	        throw new Error('Handler must be a function, was \'' + (typeof handler === 'undefined' ? 'undefined' : (0, _typeof3.default)(handler)) + '\' instead');
+	      }
+	
+	      this.onStartHandlers.push(handler);
+	    }
+	  }, {
+	    key: 'onSuccess',
+	    value: function onSuccess(handler) {
+	      if (typeof handler !== 'function') {
+	        throw new Error('Handler must be a function, was \'' + (typeof handler === 'undefined' ? 'undefined' : (0, _typeof3.default)(handler)) + '\' instead');
+	      }
+	
+	      this.onSuccessHandlers.push(handler);
+	    }
+	  }, {
+	    key: 'create',
+	    value: function create() {
+	      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	        args[_key] = arguments[_key];
+	      }
+	
+	      return new (Function.prototype.bind.apply(_Transition2.default, [null].concat([this], args)))();
+	    }
+	  }]);
+	  return Transitions;
+	}();
+	
+	exports.default = Transitions;
+
+/***/ },
+/* 111 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _getIterator2 = __webpack_require__(1);
+	
+	var _getIterator3 = _interopRequireDefault(_getIterator2);
+	
+	var _classCallCheck2 = __webpack_require__(60);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	var _createClass2 = __webpack_require__(61);
+	
+	var _createClass3 = _interopRequireDefault(_createClass2);
+	
+	var _UrlMatcher = __webpack_require__(107);
+	
+	var _UrlMatcher2 = _interopRequireDefault(_UrlMatcher);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var UrlRouter = function () {
+	  function UrlRouter(prefix) {
+	    (0, _classCallCheck3.default)(this, UrlRouter);
+	
+	    this.prefix = prefix || '#!';
+	    this.rules = [];
+	    this.default = null;
+	  }
+	
+	  (0, _createClass3.default)(UrlRouter, [{
+	    key: 'onChange',
+	    value: function onChange(hash) {
+	      var path = hash.replace(this.prefix, '');
+	
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+	
+	      try {
+	        for (var _iterator = (0, _getIterator3.default)(this.rules), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          var rule = _step.value;
+	
+	          if (rule(path)) {
+	            return true;
+	          }
+	        }
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator.return) {
+	            _iterator.return();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
+	
+	      console.warn('No route handler found for \'' + path + '\'');
+	
+	      if (this.default && path !== this.default) {
+	        var url = this.prefix + this.default;
+	
+	        this.replaceState({}, '', url);
+	        this.onChange(url);
+	      }
+	    }
+	  }, {
+	    key: 'listen',
+	    value: function listen() {
+	      var _this = this;
+	
+	      // @TODO: normalize popstate/hashchange
+	      window.addEventListener('hashchange', function (event) {
+	        // this.onChange(window.location.hash)
+	      });
+	
+	      window.addEventListener('popstate', function (event) {
+	        _this.onChange(window.location.hash);
+	      });
+	
+	      // Handle the current hash
+	      this.onChange(window.location.hash);
+	    }
+	
+	    /**
+	     * @method pushState
+	     * @description
+	     * Wraps window.history.pushState.
+	     *
+	     * @param {Object} state
+	     * @param {String} title
+	     * @param {String} url
+	     */
+	
+	  }, {
+	    key: 'pushState',
+	    value: function pushState() {
+	      var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	      var title = arguments[1];
+	      var url = arguments[2];
+	
+	      if (window && window.history && window.history.pushState) {
+	        window.history.pushState(state, title, url);
+	      }
+	    }
+	
+	    /**
+	     * @method replaceState
+	     * @description
+	     * Wraps window.history.replaceState.
+	     *
+	     * @param {Object} state
+	     * @param {String} title
+	     * @param {String} url
+	     */
+	
+	  }, {
+	    key: 'replaceState',
+	    value: function replaceState() {
+	      var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	      var title = arguments[1];
+	      var url = arguments[2];
+	
+	      if (window && window.history && window.history.replaceState) {
+	        window.history.replaceState(state, title, url);
+	      }
+	    }
+	  }, {
+	    key: 'when',
+	    value: function when(url, handler) {
+	      var matcher = new _UrlMatcher2.default(url);
+	
+	      this.rules.push(function (path) {
+	        var result = matcher.exec(path);
+	
+	        if (!result) {
+	          return false;
+	        }
+	
+	        handler(result);
+	
+	        return true;
+	      });
+	    }
+	  }, {
+	    key: 'otherwise',
+	    value: function otherwise(url) {
+	      this.default = url;
+	    }
+	  }]);
+	  return UrlRouter;
+	}();
+	
+	exports.default = UrlRouter;
 
 /***/ }
 /******/ ])
