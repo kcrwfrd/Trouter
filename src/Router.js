@@ -149,6 +149,9 @@ class Router {
    */
 
   transitionTo(route, params = {}, options = {}) {
+    // Params inherit current by default
+    params = Object.assign({}, this.current.params, params)
+
     let transition = this.transitions.create(
       this.current.route, route, this.current.params, params
     )
