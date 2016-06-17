@@ -18,18 +18,58 @@ class Transition {
    */
 
   constructor(transitions, current, target, currentParams = {}, toParams = {}) {
+    // If a parent param has changed, we'll need to reload from there
+    let changedParams = _.reduce(currentParams, (memo, value, key) => {
+      if (key in toParams && toParams[key] !== value) {
+        memo[key] = toParams[key]
+      }
+
+      return memo
+    }, {})
+
+    // @TODO refactor path traversal into PathFactory
+
     let nearestCommonAncestor =
       _.findLast(current.path, (ancestor) => {
         return target.path.indexOf(ancestor) > -1
       })
 
-    this.exitPath = (target === current) ? [target] :
-      current.path
-        .slice(current.path.indexOf(nearestCommonAncestor) + 1)
-        .reverse()
+    // We'll need to reload starting from here if a param changed
+    let minStartIndex = target.path.findIndex((route, index) => {
+      return route.params.some((param) => param in changedParams)
+    })
 
-    this.enterPath = (target === current) ? [target] :
-      target.path.slice(target.path.indexOf(nearestCommonAncestor) + 1)
+    // Determine which node in the entering target's path to start from
+    let enterIndex = (() => {
+      let fromAncestor = target.path.indexOf(nearestCommonAncestor) + 1
+
+      if (current === target && minStartIndex < 0) {
+        return target.path.length - 1
+      }
+
+      if (minStartIndex < 0 || fromAncestor < minStartIndex) {
+        return fromAncestor
+      }
+
+      return minStartIndex
+    })()
+
+    this.enterPath = target.path.slice(enterIndex)
+
+    // Determine last node in the exiting route's path to exit
+    let exitIndex = (() => {
+      let enterStart = target.path[enterIndex]
+
+      let changedAncestorIndex = current.path.indexOf(enterStart)
+
+      if (changedAncestorIndex >= 0) {
+        return changedAncestorIndex
+      }
+
+      return current.path.indexOf(nearestCommonAncestor) + 1
+    })()
+
+    this.exitPath = current.path.slice(exitIndex).reverse()
 
     this.onStartQueue = new Queue(transitions.onStartHandlers.map((handler) => {
       return handler.bind(handler, target)
