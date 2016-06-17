@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import {isObject, defer} from './common'
+import UrlMatcher from './UrlMatcher'
 
 /**
  * @class Route
@@ -18,6 +19,15 @@ class Route {
     } = definition
 
     url = url || ''
+
+    if (url) {
+      // @TODO abstract param parsing out from UrlMatcher.
+      // We parse this routes URL before prepending parents so
+      // we only have this route's params.
+      var urlMatcher = new UrlMatcher(url)
+    }
+
+    this.params = urlMatcher && urlMatcher.params || []
 
     // Prepend URL with parent's URL
     // @TODO: should each route only be concerned with its section of the url?
