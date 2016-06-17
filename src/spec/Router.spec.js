@@ -352,6 +352,19 @@ describe('Router:', () => {
         })
     })
 
+    it('Should exit and re-enter parent route when parent route param changes.', () => {
+      spyOn(foo, 'exit').and.callThrough()
+
+      return router.transitionTo(foo, {
+        fooId: '1'
+      })
+      .then(() => router.transitionTo(bar, { fooId: '2', barId: '3' }))
+      .then(() => {
+        expect(foo.exit).toHaveBeenCalled()
+        expect(fooCtrl.calls.count()).toBe(2)
+      })
+    })
+
     describe('With Exit Handlers:', () => {
       let deferred, onExit;
 
