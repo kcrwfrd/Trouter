@@ -284,6 +284,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var params = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 	      var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 	
+	      // Params inherit current by default
+	      params = (0, _assign2.default)({}, this.current.params, params);
+	
 	      var transition = this.transitions.create(this.current.route, route, this.current.params, params);
 	
 	      if (options.location) {
