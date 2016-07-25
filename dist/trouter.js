@@ -3822,6 +3822,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _UrlMatcher2 = _interopRequireDefault(_UrlMatcher);
 	
+	var _lodash = __webpack_require__(65);
+	
+	var _lodash2 = _interopRequireDefault(_lodash);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var UrlRouter = function () {
@@ -3879,14 +3883,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function listen() {
 	      var _this = this;
 	
-	      // @TODO: normalize popstate/hashchange
-	      window.addEventListener('hashchange', function (event) {
-	        // this.onChange(window.location.hash)
+	      // IE11 supports popstate, but the event doesn't fire when
+	      // a normal hash link is clicked or user manually changes hash.
+	      // So we just listen for both events with a debounced handler.
+	      var onChange = _lodash2.default.debounce(function () {
+	        return _this.onChange(window.location.hash);
+	      }, 1, {
+	        leading: true,
+	        trailing: false
 	      });
 	
-	      window.addEventListener('popstate', function (event) {
-	        _this.onChange(window.location.hash);
-	      });
+	      window.addEventListener('popstate', onChange);
+	      window.addEventListener('hashchange', onChange);
 	
 	      // Handle the current hash
 	      this.onChange(window.location.hash);
