@@ -1,4 +1,5 @@
 import UrlMatcher from './UrlMatcher'
+import _ from 'lodash'
 
 class UrlRouter {
   constructor(prefix) {
@@ -27,14 +28,17 @@ class UrlRouter {
   }
 
   listen() {
-    // @TODO: normalize popstate/hashchange
-    window.addEventListener('hashchange', (event) => {
-      // this.onChange(window.location.hash)
-    })
+    // IE11 supports popstate, but the event doesn't fire when
+    // a normal hash link is clicked or user manually changes hash.
+    // So we just listen for both events with a debounced handler.
+    let onChange =
+      _.debounce(() => this.onChange(window.location.hash), 1, {
+        leading: true,
+        trailing: false,
+      })
 
-    window.addEventListener('popstate', (event) => {
-      this.onChange(window.location.hash)
-    })
+    window.addEventListener('popstate', onChange)
+    window.addEventListener('hashchange', onChange)
 
     // Handle the current hash
     this.onChange(window.location.hash)
