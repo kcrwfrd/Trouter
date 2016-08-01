@@ -44,9 +44,10 @@ class Registry {
     }
 
     if (route && route.navigable) {
-      this.urlRouter.when(route.url, (params) => {
-        return this.router.transitionTo(route, params)
-      })
+      this.urlRouter.when(route)
+      // this.urlRouter.when(route.url, (params) => {
+      //   return this.router.transitionTo(route, params)
+      // })
     }
 
     return route
@@ -95,6 +96,18 @@ class Registry {
 
   get(name) {
     return this.routes[name] || null
+  }
+
+  /**
+   * @method get
+   * @description
+   * Returns a registered route.
+   *
+   * @returns {Route|null}
+   */
+
+  getByUrl() {
+
   }
 }
 

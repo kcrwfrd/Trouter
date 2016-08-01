@@ -10,7 +10,7 @@ class Router {
   constructor({prefix} = {}) {
     this.prefix = prefix || '#!'
 
-    this.urlRouter = new UrlRouter(prefix)
+    this.urlRouter = new UrlRouter(this)
     this.registry = new Registry(this, this.urlRouter)
     this.transitions = new Transitions()
 
@@ -53,8 +53,8 @@ class Router {
    * Starts listening for hash changes to route to.
    */
 
-  listen() {
-    this.urlRouter.listen()
+  listen(...args) {
+    this.urlRouter.listen(...args)
   }
 
   /**

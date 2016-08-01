@@ -81,4 +81,13 @@ describe('Registry:', () => {
       expect(grandChild.path[3]).toBe(grandChild)
     })
   })
+
+  describe('getByUrl(url)', () => {
+    it('Should return a route that matches a url.', () => {
+      let home = registry.register(routes.home)
+      let route = registry.getByUrl('#!/home')
+
+      expect(route).toBe(home)
+    })
+  })
 })
