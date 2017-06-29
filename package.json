@@ -5,7 +5,8 @@
   "main": "dist/trouter.js",
   "scripts": {
     "test": "karma start",
-    "build": "webpack"
+    "build": "webpack",
+    "version": "npm run build && git add -A dist"
   },
   "author": "Kevin Crawford",
   "license": "MIT",
