@@ -49,7 +49,7 @@ class UrlMatcher {
       for (let item of queryPattern.split('&')) {
         this.queryParams.push(item)
 
-        let queryPattern = `${item}=([\\w-]+)`
+        let queryPattern = `${item}=([\\w-.~:/?#[\\]@!$'"()*+,:%]+)`
 
         this.queryPatterns.push(new RegExp(queryPattern))
       }

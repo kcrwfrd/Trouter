@@ -128,6 +128,15 @@ describe('UrlMatcher:', () => {
           bazId: null,
         })
       })
+
+      it('Should match a param value of a URI-encoded JSON blob.', () => {
+        let urlMatcher = new UrlMatcher('/?foo')
+        let value = '%7B%22test%22%3A%7B%22a%22%3A%5B%22hi%22%2Cnull%5D%7D%7D'
+
+        expect(urlMatcher.exec(`/?foo=${value}`)).toEqual({
+          foo: value
+        })
+      })
     })
   })
 })
