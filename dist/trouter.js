@@ -3316,7 +3316,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	          this.queryParams.push(item);
 	
-	          var _queryPattern = item + '=([\\w-]+)';
+	          var _queryPattern = item + '=([\\w-.~:/?#[\\]@!$\'"()*+,:%]+)';
 	
 	          this.queryPatterns.push(new RegExp(_queryPattern));
 	        }
