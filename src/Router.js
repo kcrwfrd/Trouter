@@ -110,9 +110,7 @@ class Router {
    */
 
   pushState(state = {}, title, url) {
-    if (window && window.history && window.history.pushState) {
-      window.history.pushState(state, title, url)
-    }
+    return this.urlRouter.pushState(state, title, url)
   }
 
   /**

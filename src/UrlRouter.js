@@ -1,11 +1,19 @@
 import UrlMatcher from './UrlMatcher'
 import _ from 'lodash'
+import Bowser from 'bowser'
+
+const browser = Bowser.getParser(window.navigator.userAgent)
 
 class UrlRouter {
   constructor(prefix) {
     this.prefix = prefix || '#!'
     this.rules = []
     this.default = null
+
+    // IE <=11 and Edge < 14 don't support popstate on hash URL changes. See
+    // https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/3740423/
+    this.usePushState = !!(window.history && window.history.pushState) &&
+      !(browser.satisfies({ ie: '<=11', edge: '<14' }))
   }
 
   onChange(hash) {
@@ -28,17 +36,10 @@ class UrlRouter {
   }
 
   listen() {
-    // IE11 supports popstate, but the event doesn't fire when
-    // a normal hash link is clicked or user manually changes hash.
-    // So we just listen for both events with a debounced handler.
-    let onChange =
-      _.debounce(() => this.onChange(window.location.hash), 1, {
-        leading: true,
-        trailing: false,
-      })
-
-    window.addEventListener('popstate', onChange)
-    window.addEventListener('hashchange', onChange)
+    window.addEventListener(
+      this.usePushState ? 'popstate' : 'hashchange',
+      () => this.onChange(window.location.hash)
+    )
 
     // Handle the current hash
     this.onChange(window.location.hash)
@@ -55,8 +56,10 @@ class UrlRouter {
    */
 
   pushState(state = {}, title, url) {
-    if (window && window.history && window.history.pushState) {
+    if (this.usePushState) {
       window.history.pushState(state, title, url)
+    } else {
+      window.location.hash = url
     }
   }
 
@@ -71,8 +74,11 @@ class UrlRouter {
    */
 
   replaceState(state = {}, title, url) {
-    if (window && window.history && window.history.replaceState) {
+    if (this.usePushState) {
       window.history.replaceState(state, title, url)
+    } else {
+      let href = window.location.href.replace(/(javascript:|#).*$/, '')
+      window.location.replace(href + url)
     }
   }
 
